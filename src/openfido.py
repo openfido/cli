@@ -412,3 +412,4 @@ def run(options=[], stream=default_streams):
 		else:
 			raise Exception(f"option {options[n]} unexpected")
 	return module.main(inputs=inputs,outputs=outputs,options=flags)
+
