@@ -14,10 +14,10 @@ The command `openfido` supports the following subcommands:
 * `openfido [OPTIONS] help [FUNCTION]`
 * `openfido [OPTIONS] index [PATTERN]`
 * `openfido [OPTIONS] info FUNCTION`
-* `openfido [OPTIONS] install NAME ...`
-* `openfido [OPTIONS] remove NAME ...`
-* `openfido [OPTIONS] run NAME [OPTIONS] inputlist outputlist`
-* `openfido [OPTIONS] update NAME ...`
+* `openfido [OPTIONS] install FUNCTION ...`
+* `openfido [OPTIONS] remove FUNCTION ...`
+* `openfido [OPTIONS] run FUNCTION [OPTIONS] inputlist outputlist`
+* `openfido [OPTIONS] update FUNCTION ...`
 
 ## Options
 
