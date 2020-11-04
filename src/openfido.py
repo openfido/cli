@@ -195,7 +195,7 @@ def index(options=[], stream=default_streams):
 				pos = repo.find(option[option[0]=='^':])
 				if pos < 0:
 					continue
-				url = f"{rawurl}/{orgname}/{name}/{branch}/openfido.json"
+				url = f"{rawurl}/{orgname}/{repo}/{branch}/openfido.json"
 				try:
 					manifest = requests.get(url).json()
 					if manifest["application"] == "openfido" and ( option[0] != '^' or pos == 0 ):
@@ -203,7 +203,16 @@ def index(options=[], stream=default_streams):
 				except:
 					pass
 	else:
-		result = list(repos.keys())
+		result = []
+		for repo in list(repos.keys()):
+			url = f"{rawurl}/{orgname}/{repo}/{branch}/openfido.json"
+			try:
+				manifest = requests.get(url).json()
+				if manifest["application"] == "openfido":
+					result.append(repo)
+			except:
+				pass
+
 	for name in sorted(result):
 		stream["output"](name)
 	return result
