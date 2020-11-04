@@ -3,7 +3,7 @@
 To install the OpenFIDO CLI, enter the following command at the command prompt:
 
 ~~~
-curl https://raw.githubusercontent.com/openfido/cli/main/install.sh | bash
+curl -sL https://raw.githubusercontent.com/openfido/cli/main/install.sh | bash
 ~~~
 
 # Quick Start
