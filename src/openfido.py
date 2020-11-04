@@ -1,6 +1,6 @@
-"""OpenFIDO API for HiPAS GridLAB-D
+"""OpenFIDO API
 
-Syntax: gridlabd openfido [OPTIONS] COMMAND [...]
+Syntax: openfido [OPTIONS] FUNCTION [...]
 
 Options:
 	-v|--verbose   enables more output
@@ -29,7 +29,7 @@ verbose = False # print more messages as work is done
 quiet = False # print fewer messages as work is done
 orgname = "openfido" # default repo for workflows and pipelines
 branch = "main" # default branch to use when downloading workflows and pipelines
-cache = "/usr/local/share/gridlabd/openfido" # additional path for downloaded modules
+cache = "/usr/local/share/openfido" # additional path for downloaded modules
 apiurl = "https://api.github.com"
 rawurl = "https://raw.githubusercontent.com"
 giturl = "https://github.com"
@@ -71,7 +71,13 @@ command_streams = {"output":print, "warning":warnings.warn, "error":_error, "ver
 # CONFIG FUNCTION
 #
 def config(options=[], stream=default_streams):
-	"""Syntax: gridlabd openfido config [show|get VARIABLE|set VARIABLE VALUE]
+	"""Syntax: openfido config [show|get VARIABLE|set VARIABLE VALUE]
+
+	The `config` function manages the openfido configuration file.  There are three possible locations
+	for the file `openfido_config.py`, and they are used in the following order of precedence:
+		1. `./openfido_config.py`
+		2. `$HOME/.openfido/openfido_config.py`
+		3. `/usr/local/share/openfido_config.py`
 	"""
 	if len(options) == 0:
 		options = ["show"]
@@ -111,7 +117,7 @@ def config(options=[], stream=default_streams):
 			cfgfile = "./openfido_config.py"
 			options = options[1:]
 		else:
-			cfgfile = os.getenv("HOME")+"/.gridlabd/openfido_config.py"
+			cfgfile = os.getenv("HOME")+"/.openfido/openfido_config.py"
 		if len(options) < 3:
 			raise Exception(f"missing value")
 		if not options[1] in result.keys():
@@ -137,7 +143,9 @@ def config(options=[], stream=default_streams):
 # HELP FUNCTION
 #
 def help(options=[], stream=default_streams):
-	"""Syntax: gridlabd openfido help [COMMAND]
+	"""Syntax: openfido help [COMMAND]
+
+	The `help` function displays help information using the python help facility.
 	"""
 	if not options:
 		text = pydoc.render_doc(sys.modules[__name__],renderer=pydoc.plaintext).split("\n")
@@ -160,7 +168,9 @@ def help(options=[], stream=default_streams):
 # LIST FUNCTION
 #
 def index(options=[], stream=default_streams):
-	"""Syntax: gridlabd openfido index [PATTERN]
+	"""Syntax: openfido index [PATTERN]
+
+	The `index` function lists the contents of the public openfido product library.
 	"""
 	headers = {}
 	if _auth.token:
@@ -185,8 +195,13 @@ def index(options=[], stream=default_streams):
 				pos = repo.find(option[option[0]=='^':])
 				if pos < 0:
 					continue
-				if option[0] != '^' or pos == 0:
-					result.append(repo)
+				url = f"{rawurl}/{orgname}/{name}/{branch}/openfido.json"
+				try:
+					manifest = requests.get(url).json()
+					if manifest["application"] == "openfido" and ( option[0] != '^' or pos == 0 ):
+						result.append(repo)
+				except:
+					pass
 	else:
 		result = list(repos.keys())
 	for name in sorted(result):
@@ -197,7 +212,9 @@ def index(options=[], stream=default_streams):
 # INFO FUNCTION
 #
 def info(options=[], stream=default_streams):
-	"""Syntax: gridlabd openfido info NAME
+	"""Syntax: openfido info PRODUCT
+
+	The `info` function displays information about a public openfido product.
 	"""
 	if len(options) == 0:
 		raise Exception("product name is required")
@@ -220,7 +237,9 @@ def info(options=[], stream=default_streams):
 # INSTALL FUNCTION
 #
 def install(options=[], stream=default_streams):
-	"""Syntax: gridlabd openfido [OPTIONS] install [-d|--dryrun] NAME ...
+	"""Syntax: openfido [OPTIONS] install [-d|--dryrun] PRODUCT ...
+
+	The `install` command installs one or more public openfido products on the local system.
 	"""
 	headers = {}
 	if _auth.token:
@@ -293,7 +312,10 @@ def install(options=[], stream=default_streams):
 # UPDATE FUNCTION
 #
 def update(options=[], stream=default_streams):
-	"""Syntax: gridlabd openfido [OPTIONS] update [-d|--dryrun] NAME ...
+	"""Syntax: openfido [OPTIONS] update [-d|--dryrun] PRODUCT ...
+
+	The `update` function brings one or more products on the local system up to date with the 
+	most recent public versions.
 	"""
 	dryrun = os.system
 	done = []
@@ -319,9 +341,11 @@ def update(options=[], stream=default_streams):
 # REMOVE FUNCTION
 #
 def remove(options=[], stream=default_streams):
-	"""Syntax: gridlabd openfido [OPTIONS] remove [-d|--dryrun] NAME ...
+	"""Syntax: openfido [OPTIONS] remove [-d|--dryrun] PRODUCT ...
+
+	The `remove` function removes one or more products from the local system.
 	"""
-	dryrun = os.system # shutil.rmtree # too chicken to enable it now
+	dryrun = os.system 
 	done = []
 	failed = []
 	for option in options:
@@ -333,7 +357,7 @@ def remove(options=[], stream=default_streams):
 	for name in options:
 		if name[0] != '-':
 			if cache[0] != '/':
-				stream["error"](f"too chicken to remove a folder without an absolute path")
+				stream["error"](f"unable to remove a folder without an absolute path")
 				failed.append(name)
 			elif os.path.exists(f"{cache}/{name}/.git"):
 				stream["verbose"](f"removing {cache}/{name}")
@@ -348,7 +372,9 @@ def remove(options=[], stream=default_streams):
 # RUN FUNCTION
 #
 def run(options=[], stream=default_streams):
-	"""Syntax: gridlabd openfido [OPTIONS] run NAME [OPTIONS ...] INPUTFILES [OUTPUTFILES]
+	"""Syntax: openfido [OPTIONS] run PRODUCT [OPTIONS ...] INPUTFILES [OUTPUTFILES]
+
+	The `run` function runs an openfido product on the local system.
 	"""
 	if not options:
 		raise Exception("missing package name")

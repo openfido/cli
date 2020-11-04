@@ -1,5 +1,5 @@
 #!/usr/local/bin/python3
-"""gridlabd-openfido subcommand
+"""openfido command line interface
 """
 
 import sys, os, traceback, datetime, inspect
