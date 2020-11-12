@@ -25,3 +25,7 @@ The following general options are available
 
 * `-v|--verbose`   enable extra output
 * `-q|--quiet`     disable unnecessary output
+
+# Developers
+
+See the `dev` folder for details on developer tools.
