@@ -16,18 +16,6 @@ Authentication methods:
 
 	$HOME/.github/access-token file:
 		<your-token>
-
-Function cardinalities:
-
-	-0	  generates a single output to stdout (example `random`)
-	-N    generates N outputs to files (example `random`)
-	N-    modifies N file inputs in place (example `transpose --inplace`)
-	0-0   accepts input from stdin and generates output to stdout (example `to-json`)
-	N-0   accepts N file inputs and generates output to stdout (example `concatenate`)
-	0-N   accepts input from stdin and generates output to N files (example `split`)
-	N-N   accepts N file inputs and generates N output files (example `to-json`)
-	N-M   accepts N file inputs and generates M output files where M>N (example `split`)
-	M-N   accepts M file inputs and generates N output files where M>N (examplte `split`)
 """
 
 import os, sys, pydoc, warnings
@@ -159,19 +147,25 @@ def help(options=[], stream=default_streams):
 
 	The `help` function displays help information using the python help facility.
 	"""
+	mod = sys.modules[__name__]
 	if not options:
-		text = pydoc.render_doc(sys.modules[__name__],renderer=pydoc.plaintext).split("\n")
-		for line in text:
-			stream["output"](line)
+		stream["output"](mod.__doc__)
+		stream["output"]("Functions:")
+		for entry in sorted(dir(mod)):
+			call = getattr(mod,entry)
+			if entry[0] != '_' and callable(call):
+				text = pydoc.render_doc(call,renderer=pydoc.plaintext).split("\n")[3].strip()
+				stream["output"](f"\t{text.replace('Syntax: ','')}")
+		stream["output"]("")
 	elif not type(options) is list:
 		raise Exception("help options must be a list")
 	elif len(options) > 1:
 		raise Exception("help is only available on one command at a time")
-	elif hasattr(sys.modules[__name__],options[0]):
-		call = getattr(sys.modules[__name__],options[0])
+	elif hasattr(mod,options[0]):
+		call = getattr(mod,options[0])
 		text = pydoc.render_doc(call,renderer=pydoc.plaintext).split("\n")[3:]
 		for line in text:
-			stream["output"](line[4:])
+			stream["output"](line.strip())
 		return text
 	else:
 		raise Exception(f"help on '{options[0]}' not available or command not found")
