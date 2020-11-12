@@ -3,6 +3,13 @@
 
 import os, csv, json, pandas, inspect
 
+def get_help(function):
+	import importlib.util as lib
+	spec = lib.spec_from_file_location(function.replace("/__init__.py",""),function)
+	mod = lib.module_from_spec(spec)
+	spec.loader.exec_module(mod)
+	return mod.__doc__
+
 def get_cardinalities(function):
 	"""Get I/O cardinalities of an openfido function
 	Valid cardinalities:
