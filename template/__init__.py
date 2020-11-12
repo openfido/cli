@@ -15,11 +15,32 @@ DESCRIPTION
       TODO
 """
 
+# main is required for openfido to be able to call this product
 def main(inputs,outputs,options):
+
+	# load the openfido utility module
 	import openfido_util as of
+
+	# setup the input and output file lists
 	of.setup_io(inputs,outputs)
+
+	# stage the results
+	result = {}
+
+	# process the input files
 	for file in inputs:
-		TODO
+
+		# read the input
+		TODO = of.read_input(file,options)
+
+	# process the output files
 	for file in outputs:
-		TODO
-	return TODO
+
+		# write the output
+		of.write_output(TODO,file,options)
+
+		# prepare the return dict
+		result[file] = TODO
+
+	# return the result to the caller
+	return result
