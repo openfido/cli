@@ -16,6 +16,18 @@ Authentication methods:
 
 	$HOME/.github/access-token file:
 		<your-token>
+
+Function cardinalities:
+
+	-0	  generates a single output to stdout (example `random`)
+	-N    generates N outputs to files (example `random`)
+	N-    modifies N file inputs in place (example `transpose --inplace`)
+	0-0   accepts input from stdin and generates output to stdout (example `to-json`)
+	N-0   accepts N file inputs and generates output to stdout (example `concatenate`)
+	0-N   accepts input from stdin and generates output to N files (example `split`)
+	N-N   accepts N file inputs and generates N output files (example `to-json`)
+	N-M   accepts N file inputs and generates M output files where M>N (example `split`)
+	M-N   accepts M file inputs and generates N output files where M>N (examplte `split`)
 """
 
 import os, sys, pydoc, warnings
@@ -33,7 +45,7 @@ cache = "/usr/local/share/openfido" # additional path for downloaded modules
 apiurl = "https://api.github.com"
 rawurl = "https://raw.githubusercontent.com"
 giturl = "https://github.com"
-traceback_file = "openfido.err"
+traceback_file = "/dev/stderr"
 try:
 	from openfido_config import *
 except:
@@ -411,5 +423,9 @@ def run(options=[], stream=default_streams):
 			outputs = options[n].split(',')
 		else:
 			raise Exception(f"option {options[n]} unexpected")
+	if not inputs:
+		inputs = ["/dev/stdin"]
+	if not outputs:
+		outputs = ["/dev/stdout"]
 	return module.main(inputs=inputs,outputs=outputs,options=flags)
 

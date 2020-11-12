@@ -1,5 +1,5 @@
 #!/usr/local/bin/python3
-"""openfido command line interface
+"""OpenFIDO Command Line Interface (CLI)
 """
 
 import sys, os, traceback, datetime, inspect
@@ -88,7 +88,7 @@ except:
         apiurl = "https://api.github.com"
         rawurl = "https://raw.githubusercontent.com"
         giturl = "https://github.com"
-        traceback_file = "openfido.err"
+        traceback_file = "/dev/stderr"
         pass
 
 # setup default streams
