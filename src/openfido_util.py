@@ -15,14 +15,15 @@ def csv_quote(c):
 		return opts[c.lower()]
 	else:
 		raise Exception(f"'{c}' is not a valid CSV quoting option")
-#
-# FORMAT OPTIONS
+
 #
 # This defines all the I/O formats supported by OpenFIDO using dataframe
 #
 format_options = {
-	"csv" : {
-		"read" : {
+	"/dev/stdin" : "csv", # specify the default file type for stdin
+	"/dev/stdout" : "csv", # specify the default file type for stdout
+	"csv" : { # CSV file type information
+		"read" : { # read options data types
 			"sep" : [str],
 			"delimiter" : [str],
 			"header" : [list,str,bool],
@@ -67,7 +68,7 @@ format_options = {
 			"memory_map" : [bool],
 			"float_precision" : [str],
 		},
-		"write" : {
+		"write" : { # write option data types
 			"sep" : [str],
 			"na_rep" : [str],
 			"float_format" : [None,str],
@@ -83,11 +84,11 @@ format_options = {
 			"escapechar" : [None,str],
 			"decimal" : [str],
 		},
-		"call" : {
+		"call" : { # read/write callables
 			"read" : lambda file,options: pandas.read_csv(file,**options),
 			"write" : lambda data,file,options: data.to_csv(file,**options),
 		},
-		"default" : {
+		"default" : { # default options for read and write calls
 			"read" : {
 				"header" : None,
 			},
@@ -97,8 +98,8 @@ format_options = {
 			},
 		},
 	},
-	"json" : {
-		"read" : {
+	"json" : { # JSON file type information
+		"read" : { # read options data types
 			"orient" : [str],
 			"typ" : [str],
 			"dtype" : [dict,bool],
@@ -111,7 +112,7 @@ format_options = {
 			"lines" : [bool],
 			"compression" : [None,str],
 		},
-		"write" : {
+		"write" : { # write options data types
 			"orient" : [str],
 			"data_format" : [None,str],
 			"double_precision" : [int],
@@ -123,12 +124,13 @@ format_options = {
 			"indent" : [int],
 			# TODO
 		},
-		"call" : {
+		"call" : { # read/write calls
 			"read" : lambda file,options: pandas.read_json(file,**options),
 			"write" : lambda data,file,options: data.to_json(file,**options),
 		},
-		"default" : {
-			"read" : {},
+		"default" : { # read/read default options
+			"read" : {
+			},
 			"write" : {
 				"indent" : 1,
 				"date_unit" : "s",
@@ -188,22 +190,27 @@ def setup_io(inputs,outputs,function=None):
 			raise Exception(f"invalid input cardinality '{card}'")
 
 def has_extension(file,ext):
+	"""Verifies that the file has the specified extension"""
 	return file[-1-len(ext):] == "."+ext
 
 def read_input(file,options):
+	"""Read the input file using the file format's read options"""
 	if not file:
 		raise Exception("missing input")
 	for ftype in format_options.keys():
-		if file == "/dev/stdin" or has_extension(file,ftype):
+		if file == ftype or has_extension(file,ftype):
+			if file == ftype: ftype = format_options[file]
 			options = get_read_options(ftype,options)
 			return format_options[ftype]["call"]["read"](file,options)
 	raise Exception(f"{file} is not in a supported input format")
 
 def write_output(data,file,options):
+	"""Write the output file using the file format's write options"""
 	if not file:
 		raise Exception("missing output")
 	for ftype in format_options.keys():
-		if file == "/dev/stdout" or has_extension(file,ftype):
+		if file == ftype or has_extension(file,ftype):
+			if file == ftype: ftype = format_options[file]
 			options = get_write_options(ftype,options)
 			format_options[ftype]["call"]["write"](data,file,options)
 			return None
@@ -307,6 +314,7 @@ def get_option(name,value,types):
 	raise Exception(f"'{name}={value}' is not a valid option for type '{type}'")
 
 def get_read_options(ftype,options):
+	"""Get the file type's read options"""
 	result = format_options[ftype]["default"]["read"]
 	for option in options:
 		tag = f"--{ftype}-read-"
@@ -322,6 +330,7 @@ def get_read_options(ftype,options):
 	return result
 
 def get_write_options(ftype,options):
+	"""Get the file type's write options"""
 	result = format_options[ftype]["default"]["read"]
 	for option in options:
 		tag = f"--{ftype}-write-"
