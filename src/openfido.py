@@ -18,7 +18,7 @@ Authentication methods:
 		<your-token>
 """
 
-import os, sys, pydoc, warnings
+import os, sys, glob, pydoc, warnings
 import requests, shutil, importlib
 
 sys.path.append(".")
@@ -322,6 +322,31 @@ def install(options=[], stream=default_streams):
 				# TODO: implement installation
 				done.append(name)
 	return {"ok":len(done), "errors":len(failed), "done":done, "failed": failed}
+
+#
+# LIST FUNCTION
+#
+def show(options=[], stream=default_streams):
+	"""Syntax: openfido [OPTIONS] show PATTERN ...
+	
+	The `show` function prints out the products with names that match PATTERN.
+	"""
+	if not options:
+		options = ["*"]
+	for pattern in options:
+		for path in glob.iglob(f"{cache}/{pattern}"):
+			name = path.split("/")[-1]
+			if not os.path.exists(f"{path}/openfido.json"):
+				raise Exception(f"'{cache}/{name}' not found")
+			sys.path.append(f"{cache}/{name}")
+			if not os.path.exists(f"{path}/__init__.py"):
+				raise Exception(f"'{path}/__init__.py' not found")
+			spec = importlib.util.spec_from_file_location(name,f"{path}/__init__.py")
+			module = importlib.util.module_from_spec(spec)
+			spec.loader.exec_module(module)
+			if not hasattr(module,"main") or not callable(module.main):
+				raise Exception(f"'{name}/__init__.py' missing callable main")
+			stream["output"](name)
 
 #
 # UPDATE FUNCTION
