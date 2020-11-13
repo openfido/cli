@@ -3,7 +3,142 @@
 
 import os, csv, json, pandas, inspect
 
+def csv_quote(c):
+	"""Special data type for CSV quoting"""
+	opts = {
+		"all" : csv.QUOTE_ALL,
+		"minimal" : csv.QUOTE_MINIMAL,
+		"nonnumeric" : csv.QUOTE_NONNUMERIC,
+		"none" : csv.QUOTE_NONE,
+		}
+	if c.lower() in opts.keys():
+		return opts[c.lower()]
+	else:
+		raise Exception(f"'{c}' is not a valid CSV quoting option")
+#
+# FORMAT OPTIONS
+#
+# This defines all the I/O formats supported by OpenFIDO using dataframe
+#
+format_options = {
+	"csv" : {
+		"read" : {
+			"sep" : [str],
+			"delimiter" : [str],
+			"header" : [list,str,bool],
+			"names" : [list],
+			"index_col" : [None,int,bool,str],
+			"usecols" : [list],
+			"prefix" : [bool],
+			"mangle_dup_cols" : [bool],
+			"dtype" : [dict,str],
+			"engine" : [str],
+			"converters" : [dict],
+			"true_values" : [list],
+			"false_values" : [list],
+			"skipinitialspaces" : [bool],
+			"skiprows" : [int,list],
+			"nrows" : [int],
+			"na_values" : [float,str,list,dict],
+			"keep_default_na" : [bool],
+			"na_filter" : [bool],
+			"verbose" : [bool],
+			"skip_blank_lines" : [bool],
+			"parse_dates" : [bool,list,dict],
+			"infer_datetime_format" : [bool],
+			"keep_date_col" : [bool],
+			# "date_parser" : [function],
+			"dayfirst" : [bool],
+			"cache_dates" : [bool],
+			"compression" : [str],
+			"thousands" : [str],
+			"decimal" : [str],
+			"lineterminator" : [str],
+			"quoting" : [csv_quote],
+			"quotechar" : [str],
+			"doublequote" : [bool],
+			"escapechar" : [None,str],
+			"comment" : [str],
+			"dialect" : [str],
+			"error_bad_lines" : [bool],
+			"warn_bad_lines" : [bool],
+			"delim_whitespaces" : [bool],
+			"low_memory" : [bool],
+			"memory_map" : [bool],
+			"float_precision" : [str],
+		},
+		"write" : {
+			"sep" : [str],
+			"na_rep" : [str],
+			"float_format" : [None,str],
+			"header" : [bool,list,str],
+			"index" : [bool],
+			"encoding" : [str],
+			"compression" : [str],
+			"quoting" : [csv_quote],
+			"quotechar" : [str],
+			"line_terminator" : [str],
+			"date_format" : [None,str],
+			"doublequote" : [bool],
+			"escapechar" : [None,str],
+			"decimal" : [str],
+		},
+		"call" : {
+			"read" : lambda file,options: pandas.read_csv(file,**options),
+			"write" : lambda data,file,options: data.to_csv(file,**options),
+		},
+		"default" : {
+			"read" : {
+				"header" : None,
+			},
+			"write" : {
+				"header" : False,
+				"index" : False,
+			},
+		},
+	},
+	"json" : {
+		"read" : {
+			"orient" : [str],
+			"typ" : [str],
+			"dtype" : [dict,bool],
+			"convert_axes" : [None,bool],
+			"convert_dates" : [list,bool],
+			"keep_default_dates" : [bool],
+			"precise_float" : [bool],
+			"date_unit" : [None,str],
+			"encoding" : [str],
+			"lines" : [bool],
+			"compression" : [None,str],
+		},
+		"write" : {
+			"orient" : [str],
+			"data_format" : [None,str],
+			"double_precision" : [int],
+			"force_ascii" : [bool],
+			"date_unit" : [str],
+			"lines" : [bool],
+			"compression" : [None,str],
+			"index" : [bool],
+			"indent" : [int],
+			# TODO
+		},
+		"call" : {
+			"read" : lambda file,options: pandas.read_json(file,**options),
+			"write" : lambda data,file,options: data.to_json(file,**options),
+		},
+		"default" : {
+			"read" : {},
+			"write" : {
+				"indent" : 1,
+				"date_unit" : "s",
+			},
+		},
+	}
+}
+
 def get_help(function):
+	"""Obtain the help text for an OpenFIDO function"""
 	import importlib.util as lib
 	spec = lib.spec_from_file_location(function.replace("/__init__.py",""),function)
 	mod = lib.module_from_spec(spec)
@@ -27,6 +162,10 @@ def get_cardinalities(function):
 	return {"inputs":specs["inputs"], "outputs":specs["outputs"]}
 
 def setup_io(inputs,outputs,function=None):
+	"""Setup the I/O for an OpenFIDO function
+
+	This should always be called first in a function.
+	"""
 	if not function:
 		frame = inspect.stack()[1]
 		function = frame[0].f_code.co_filename
@@ -54,22 +193,21 @@ def has_extension(file,ext):
 def read_input(file,options):
 	if not file:
 		raise Exception("missing input")
-	elif file == "/dev/stdin" or has_extension(file,"csv"):
-		return pandas.read_csv(file,**get_read_options(file,options))
-	elif has_extension(file,"json"):
-		return pandas.read_json(file,**get_read_options(file,options))
-	else:
-		raise Exception(f"{file} is not in a supported input format")
+	for ftype in format_options.keys():
+		if file == "/dev/stdin" or has_extension(file,ftype):
+			options = get_read_options(ftype,options)
+			return format_options[ftype]["call"]["read"](file,options)
+	raise Exception(f"{file} is not in a supported input format")
 
 def write_output(data,file,options):
 	if not file:
 		raise Exception("missing output")
-	elif file == "/dev/stdout" or has_extension(file,"csv"):
-		data.to_csv(file,**get_write_options(file,options))
-	elif has_extension(file,"json"):
-		data.to_json(file,**get_write_options(file,options))
-	else:
-		raise Exception(f"{file} is not in a supported input format")
+	for ftype in format_options.keys():
+		if file == "/dev/stdout" or has_extension(file,ftype):
+			options = get_write_options(ftype,options)
+			format_options[ftype]["call"]["write"](data,file,options)
+			return None
+	raise Exception(f"{file} is not in a supported input format")
 
 def hold(df,order=0,axis=0,inplace=True):
 	"""Perform hold on dataframe
@@ -137,21 +275,21 @@ def get_option(name,value,types):
 				return value
 			except:
 				pass
-		elif jot is bool:
-			if value == "True":
+		if jot is bool:
+			if value.lower() == "true":
 				return True
-			elif value == "False":
+			elif value.lower() == "false":
 				return False
 			else:
 				raise Exception(f"'{name}={value}' is not valid")
-		elif jot is None and value.lower in ("none","null","nul"):
+		if jot is None and value.lower in ("none","null","nul"):
 			return None
-		elif jot is list and value.find(',') >= 0:
+		if jot is list and value.find(',') >= 0:
 			try:
 				return value.split(',')
 			except:
 				pass
-		elif jot is dict:
+		if jot is dict:
 			try:
 				items = value.split(',')
 				result = {}
@@ -161,165 +299,39 @@ def get_option(name,value,types):
 				return result
 			except:
 				pass
-		elif jot is csv_quote:
+		if jot is csv_quote:
 			try:
 				return csv_quote(value)
 			except:
 				pass
-		else:
-			raise Exception(f"'{jot}' is not a valid option type")
-	raise Exception(f"'{name}' is not a valid option")
+	raise Exception(f"'{name}={value}' is not a valid option for type '{type}'")
 
-def get_read_options(file,options):
-	result = {}
-	if has_extension(file,"json"):
-		for option in options:
-			tag = "--json-read-"
-			if option.find(tag) == 0:
-				specs = option.split("=")
-				if len(specs) < 2:
-					raise Exception(f"'{option}' is not valid") 
-				name = specs[0][len(tag):]
-				if name not in json_read_options.keys():
-					raise Exception(f"'{option}' is not valid")
-				value = specs[1]	
-				result[name] = get_option(name,value,json_read_options[name])
-	elif file == "/dev/stdin" or has_extension(file,"csv"):
-		result["header"] = None
-		for option in options:
-			tag = "--csv-read-"
-			if option.find(tag) == 0:
-				specs = option.split("=")
-				if len(specs) < 2:
-					raise Exception(f"'{option}' is not valid") 
-				name = specs[0][len(tag):]
-				if name not in csv_read_options.keys():
-					raise Exception(f"'{option}' is not valid")
-				value = specs[1]	
-				result[name] = get_option(name,value,csv_read_options[name])
-	# print(f"get_read_options(file='{file}',options={options}) --> {result}")
+def get_read_options(ftype,options):
+	result = format_options[ftype]["default"]["read"]
+	for option in options:
+		tag = f"--{ftype}-read-"
+		if option.find(tag) == 0:
+			specs = option.split("=")
+			if len(specs) < 2:
+				raise Exception(f"'{option}' is not valid") 
+			name = specs[0][len(tag):]
+			if name not in format_options[ftype]["read"].keys():
+				raise Exception(f"'{option}' is not valid")
+			value = specs[1]	
+			result[name] = get_option(name,value,format_options[ftype]["read"][name])
 	return result
 
-def get_write_options(file,options):
-	result = {}
-	if has_extension(file,"json"):
-		result["indent"] = 4
-		for option in options:
-			tag = "--json-write-"
-			if option.find(tag) == 0:
-				specs = option.split("=")
-				if len(specs) < 2:
-					raise Exception(f"'{option}' is not valid") 
-				name = specs[0][len(tag):]
-				if name not in json_write_options.keys():
-					raise Exception(f"'{options}' is not valid")
-				value = specs[1]	
-				result[name] = get_option(name,value,json_write_options[name])
-	elif file == "/dev/stdout" or has_extension(file,"csv"):
-		result["header"] = False
-		result["index"] = False
-		for option in options:
-			tag = "--csv-write-"
-			if option.find(tag) == 0:
-				specs = option.split("=")
-				if len(specs) < 2:
-					raise Exception(f"'{option}' is not valid") 
-				name = specs[0][len(tag):]
-				if name not in csv_write_options.keys():
-					raise Exception(f"'{option}' is not valid")
-				value = specs[1]	
-				result[name] = get_option(name,value,csv_write_options[name])
-	# print(f"get_write_options(file='{file}',options={options}) --> {result}")
+def get_write_options(ftype,options):
+	result = format_options[ftype]["default"]["read"]
+	for option in options:
+		tag = f"--{ftype}-write-"
+		if option.find(tag) == 0:
+			specs = option.split("=")
+			if len(specs) < 2:
+				raise Exception(f"'{option}' is not valid") 
+			name = specs[0][len(tag):]
+			if name not in format_options[ftype]["write"].keys():
+				raise Exception(f"'{options}' is not valid")
+			value = specs[1]	
+			result[name] = get_option(name,value,format_options[ftype]["write"][name])
 	return result
-
-json_read_options = {
-	"orient" : [str],
-	"typ" : [str],
-	"dtype" : [dict,bool],
-	"convert_axes" : [None,bool],
-	"convert_dates" : [list,bool],
-	"keep_default_dates" : [bool],
-	"precise_float" : [bool],
-	"date_unit" : [None,str],
-	"encoding" : [str],
-	"lines" : [bool],
-	"compression" : [None,str],
-}
-
-def csv_quote(c):
-	"""Special data type for CSV quoting"""
-	opts = {
-		"all" : csv.QUOTE_ALL,
-		"minimal" : csv.QUOTE_MINIMAL,
-		"nonnumeric" : csv.QUOTE_NONNUMERIC,
-		"none" : csv.QUOTE_NONE,
-		}
-	if c.lower() in opts.keys():
-		return opts[c.lower()]
-	else:
-		raise Exception(f"'{c}' is not a valid CSV quoting option")
-
-csv_read_options = {
-	"sep" : [str],
-	"delimiter" : [str],
-	"header" : [list,str,bool],
-	"names" : [list],
-	"index_col" : [None,int,bool,str],
-	"usecols" : [list],
-	"prefix" : [bool],
-	"mangle_dup_cols" : [bool],
-	"dtype" : [dict,str],
-	"engine" : [str],
-	"converters" : [dict],
-	"true_values" : [list],
-	"false_values" : [list],
-	"skipinitialspaces" : [bool],
-	"skiprows" : [int,list],
-	"nrows" : [int],
-	"na_values" : [float,str,list,dict],
-	"keep_default_na" : [bool],
-	"na_filter" : [bool],
-	"verbose" : [bool],
-	"skip_blank_lines" : [bool],
-	"parse_dates" : [bool,list,dict],
-	"infer_datetime_format" : [bool],
-	"keep_date_col" : [bool],
-	# "date_parser" : [function],
-	"dayfirst" : [bool],
-	"cache_dates" : [bool],
-	"compression" : [str],
-	"thousands" : [str],
-	"decimal" : [str],
-	"lineterminator" : [str],
-	"quoting" : [csv_quote],
-	"quotechar" : [str],
-	"doublequote" : [bool],
-	"escapechar" : [None,str],
-	"comment" : [str],
-	"dialect" : [str],
-	"error_bad_lines" : [bool],
-	"warn_bad_lines" : [bool],
-	"delim_whitespaces" : [bool],
-	"low_memory" : [bool],
-	"memory_map" : [bool],
-	"float_precision" : [str]
-}
-
-csv_write_options = {
-	"sep" : [str],
-	"na_rep" : [str],
-	"float_format" : [None,str],
-	"header" : [bool,list,str],
-	"index" : [bool],
-	"encoding" : [str],
-	"compression" : [str],
-	"quoting" : [csv_quote],
-	"quotechar" : [str],
-	"line_terminator" : [str],
-	"date_format" : [None,str],
-	"doublequote" : [bool],
-	"escapechar" : [None,str],
-	"decimal" : [str],
-}
-
-
