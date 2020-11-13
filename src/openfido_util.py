@@ -331,7 +331,7 @@ def get_read_options(ftype,options):
 
 def get_write_options(ftype,options):
 	"""Get the file type's write options"""
-	result = format_options[ftype]["default"]["read"]
+	result = format_options[ftype]["default"]["write"]
 	for option in options:
 		tag = f"--{ftype}-write-"
 		if option.find(tag) == 0:
