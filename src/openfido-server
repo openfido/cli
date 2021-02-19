@@ -1,0 +1,130 @@
+#!/bin/bash
+
+PIDFILE="/tmp/openfido.pid"
+LOGFILE="/var/log/openfido.log"
+touch $LOGFILE 1>/dev/null 2>&1|| LOGFILE="openfido.log"
+
+HOSTNAME="127.0.0.1"
+
+PORTNUM="3000"
+
+OPTIONS=""
+
+if [ -f "$0.conf" ]; then
+	. "$0.conf"
+fi
+
+function error()
+{
+	RC=$1
+	shift 1
+	echo "ERROR: $*"
+	if [ $RC != "NONE" ]; then
+		exit $RC
+	fi
+}
+
+function warning()
+{
+	echo "WARNING: $*"
+}
+function update ()
+{
+	echo -n "Checking for updates..."
+	docker pull openfido/openfido
+	echo "ok"
+}
+
+function status ()
+{
+	# OK - server is ready
+	# NOREPLY - server did not reply but should have
+	# INVALID - server replied but shouldn't have
+	# STOPPED - no server active
+	# <http-status-code> - server replied with unexpected code
+	PID=$(docker container ls -q -f name=openfido-server-1)
+	REPLY=$(curl -sLI "$HOSTNAME:$PORTNUM" | head -n 1 | cut -f2 -d' ') 
+	if [ -z "$PID" ]; then # no server
+		if [ -z "$REPLY"]; then # no reply
+			echo "STOPPED"
+		else
+			echo "INVALID"
+		fi
+	else
+		if [ -z "$REPLY" ]; then
+			echo "NOREPLY"
+		elif [ "$REPLY" == "200" ]; then
+			echo "OK"
+		else
+			echo "$REPLY"
+		fi
+	fi
+}
+
+function start ()
+{
+	if [ "$(status)" == "STOPPED" ]; then
+		echo -n "Starting openfido"
+		docker rm openfido-server-1 1>/dev/null 2>/dev/null || true
+		docker run --name openfido-server-1 $OPTIONS -v /tmp:/tmp -v /var/run/docker.sock:/var/run/docker.sock -p $HOSTNAME:5001:5001 -p $HOSTNAME:5002:5002 -p $HOSTNAME:5003:5003 -p $HOSTNAME:9000:9000 -p $HOSTNAME:3000:$PORTNUM openfido/openfido 1>>$LOGFILE 2>&1 &
+		while [ "$(status)" == "STOPPED" ]; do
+			sleep 1
+		done
+		while [ "$(status)" == "NOREPLY" ]; do
+			echo -n "."
+			sleep 1
+		done
+		if [ "$(status)" != "OK" ]; then
+			echo "startup failed (status=$(status)), killing server"
+			PID=$(docker container ls -q -f name=openfido-server-1)
+			docker container kill $PID > /dev/null
+		fi
+		echo "ok"
+	else
+		error 1 "unabled to start, server status is $(status)"
+	fi
+}
+
+function stop ()
+{
+	PID=$(docker container ls -q -f name=openfido-server-1)
+	if [ -z "$PID" ]; then
+		warning "no server active"
+	else
+		docker container kill $PID > /dev/null
+		docker container rm $PID > /dev/null
+	fi
+}
+
+function open()
+{
+	echo "Connecting your browser to http://$HOSTNAME:$PORTNUM"
+	echo "The default login is admin@example.com, password 1234567890"
+	open http://$HOSTNAME:$PORTNUM/	
+}
+
+if [ "$1" == "update" ]; then
+	update
+elif [ "$1" == "start" ]; then
+	start
+elif [ "$1" == "stop" ]; then
+	stop
+elif [ "$1" == "restart" ]; then
+	stop
+	start
+elif [ "$1" == "open" ]; then
+	open
+elif [ "$1" == "status" ]; then
+	STATUS=$(status)
+	case ${STATUS:-UNKNOWN} in
+	OK) echo "Server is up" ;;
+	STOPPED) echo "Openfido server is down";;
+	NOREPLY) echo "Openfido server is starting up";;
+	INVALID) echo "Openfido server is invalid";;
+	UNKNOWN) echo "Openfido server status is unknown";;
+	*) echo "Openfido server reply code $STATUS";;
+	esac
+else
+	echo "ERROR: '$1' is not a valid command"
+fi
+
