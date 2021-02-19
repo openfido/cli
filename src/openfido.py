@@ -18,7 +18,7 @@ Authentication methods:
 		<your-token>
 """
 
-import os, sys, glob, pydoc, warnings
+import os, sys, glob, pydoc, warnings, subprocess, signal
 import requests, shutil, importlib
 
 sys.path.append(".")
@@ -324,7 +324,7 @@ def install(options=[], stream=default_streams):
 	return {"ok":len(done), "errors":len(failed), "done":done, "failed": failed}
 
 #
-# LIST FUNCTION
+# SHOW FUNCTION
 #
 def show(options=[], stream=default_streams):
 	"""Syntax: openfido [OPTIONS] show PATTERN ...
@@ -448,3 +448,17 @@ def run(options=[], stream=command_streams):
 		outputs = ["/dev/stdout"]
 	return module.main(inputs=inputs,outputs=outputs,options=flags)
 
+#
+# SERVER FUNCTION
+#
+def server(options=[], stream=command_streams):
+	"""Syntax: openfido [OPTIONS] server [start|stop|restart|status]
+
+	The `server` function control the local openfido server stack running on docker.
+	"""
+	if len(options) == 0:
+		raise Exception("missing server command")
+	elif len(options) > 1:
+		raise Exception("too many server commands")
+	else:
+		subprocess.run(["/usr/local/bin/openfido-server",options[0]])
