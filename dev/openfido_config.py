@@ -1,6 +1,6 @@
 # File: openfido_config.py
 #
-# This file allow you to specify a custome openfido configuration.  If found in
+# This file allow you to specify a custom openfido configuration.  If found in
 # /usr/local/bin, it is consulted first. If found in the user's home openfido folder
 # $HOME/.openfido, it is consulted second. If found in the current folder it is consulted
 # last. Any value found supercedes the value
