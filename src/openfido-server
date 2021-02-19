@@ -31,7 +31,7 @@ function warning()
 function update ()
 {
 	echo -n "Checking for updates..."
-	docker pull openfido/openfido
+	docker pull openfido/openfido 1>/dev/null 2>/dev/null
 	echo "ok"
 }
 
@@ -64,7 +64,7 @@ function status ()
 function start ()
 {
 	if [ "$(status)" == "STOPPED" ]; then
-		echo -n "Starting openfido"
+		echo -n "Starting openfido server"
 		docker rm openfido-server-1 1>/dev/null 2>/dev/null || true
 		docker run --name openfido-server-1 $OPTIONS -v /tmp:/tmp -v /var/run/docker.sock:/var/run/docker.sock -p $HOSTNAME:5001:5001 -p $HOSTNAME:5002:5002 -p $HOSTNAME:5003:5003 -p $HOSTNAME:9000:9000 -p $HOSTNAME:3000:$PORTNUM openfido/openfido 1>>$LOGFILE 2>&1 &
 		while [ "$(status)" == "STOPPED" ]; do
@@ -91,14 +91,16 @@ function stop ()
 	if [ -z "$PID" ]; then
 		warning "no server active"
 	else
+		echo -n "Stopping openfido server..."
 		docker container kill $PID > /dev/null
 		docker container rm $PID > /dev/null
+		echo "ok"
 	fi
 }
 
-function open()
+function _open()
 {
-	echo "Connecting your browser to http://$HOSTNAME:$PORTNUM"
+	echo "Connecting your browser to http://$HOSTNAME:$PORTNUM/"
 	echo "The default login is admin@example.com, password 1234567890"
 	open http://$HOSTNAME:$PORTNUM/	
 }
@@ -113,7 +115,7 @@ elif [ "$1" == "restart" ]; then
 	stop
 	start
 elif [ "$1" == "open" ]; then
-	open
+	_open
 elif [ "$1" == "status" ]; then
 	STATUS=$(status)
 	case ${STATUS:-UNKNOWN} in

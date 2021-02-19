@@ -452,9 +452,9 @@ def run(options=[], stream=command_streams):
 # SERVER FUNCTION
 #
 def server(options=[], stream=command_streams):
-	"""Syntax: openfido [OPTIONS] server [start|stop|restart|status]
+	"""Syntax: openfido [OPTIONS] server [start|stop|restart|status|update|open]
 
-	The `server` function control the local openfido server stack running on docker.
+	The `server` function controls the local openfido server running on docker.
 	"""
 	if len(options) == 0:
 		raise Exception("missing server command")
