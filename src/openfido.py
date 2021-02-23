@@ -428,13 +428,15 @@ def run(options=[], stream=command_streams):
 	spec = importlib.util.spec_from_file_location(name,f"{path}/__init__.py")
 	module = importlib.util.module_from_spec(spec)
 	spec.loader.exec_module(module)
+	if hasattr(module,"openfido") and callable(module.openfido):
+		return module.openfido(options,stream)
 	if not hasattr(module,"main") or not callable(module.main):
 		raise Exception(f"'{name}/__init__.py' missing callable main")
 	inputs = []
 	outputs = []
 	flags = []
 	for n in range(1,len(options)):
-		if options[n][0] == '-': 
+		if options[n][0] == '-' or "=" in options[n]: 
 			flags.append(options[n])
 		elif not inputs:
 			inputs = options[n].split(',')
