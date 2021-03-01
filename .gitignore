@@ -128,3 +128,4 @@ dmypy.json
 # Pyre type checker
 .pyre/
 src/openfido.err
+.DS_Store
