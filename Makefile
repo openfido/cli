@@ -23,8 +23,13 @@ install: $(foreach TARGET,$(TARGETS),$(PREFIX)/$(TARGET))
 
 uninstall:
 	@rm -f $(foreach TARGET,$(TARGETS),$(PREFIX)/$(TARGET))
+	@test -f src/uninstall.txt && rm $(cat src/uninstall.txt)
 	@echo make: openfido removed from $(PREFIX)
 
 $(PREFIX)/%: src/%
 	@cp $< $@
 	@chmod +x $@
+
+setup:
+	@(cd src ; /usr/local/bin/python3 setup.py develop --record uninstall.txt)
+

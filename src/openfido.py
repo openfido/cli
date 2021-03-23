@@ -313,7 +313,7 @@ def install(options=[], stream=default_streams):
 				if os.path.exists(target):
 					stream["warning"](f"'{name}' is already installed")
 					done.append(name)
-				elif os.system(f"git clone -q {source} {target} -b {branch}") != 0:
+				elif os.system(f"git clone -q {source} {target} -b {branch} --depth 1") != 0:
 					stream["error"](f"unable to clone '{name}' into openfido cache '{cache}'")
 					failed.append(name)
 				else:
