@@ -420,7 +420,7 @@ def run(options=[], stream=command_streams):
 		raise Exception("missing package name")
 	name = options[0]
 	path = f"{cache}/{name}"
-	if not os.path.exists(f"{path}/openfido.json"):
+	if not os.path.exists(f"{path}/openfido.json") and not install([name],stream):
 		raise Exception(f"'{cache}/{name}' not found")
 	sys.path.append(f"{cache}/{name}")
 	if not os.path.exists(f"{path}/__init__.py"):
