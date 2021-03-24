@@ -469,11 +469,27 @@ def server(options=[], stream=command_streams):
 # PIPELINE FUNCTION
 #
 def pipeline(options=[], stream=command_streams):
+	"""Syntax: openfido [OPTIONS] pipeline COMMAND [OPTIONS]
+
+	Commands:
+		create [-l|--local] NAME DOCKER GITHUB BRANCH ENTRY [DESCRIPTION]
+		start  [-l|--local] NAME INPUTFOLDER OUTPUTFOLDER 
+
+	The `pipeline` function is used to create and start pipeline operations.
+	"""
 	raise Exception("pipeline CLI not implemented yet")
 
 #
 # WORKFLOW FUNCTION
 #
 def workflow(options=[], stream=command_streams):
+	"""Syntax: openfido [OPTIONS] workflow COMMAND [OPTIONS]
+
+	Commands:
+		create [-l|--local] SPECFILE
+		start  [-l|--local] NAME INPUTFOLDER OUTPUTFOLDER 
+
+	The `pipeline` function is used to create and start pipeline operations.
+	"""
 	raise Exception("workflow CLI not implemented yet")
 
