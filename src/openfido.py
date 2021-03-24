@@ -19,7 +19,7 @@ Authentication methods:
 """
 
 import os, sys, glob, pydoc, warnings, subprocess, signal
-import requests, shutil, importlib
+import requests, shutil, importlib, pandas, docker
 
 sys.path.append(".")
 sys.path.append(os.getenv("HOME")+"/.openfido")
@@ -468,6 +468,39 @@ def server(options=[], stream=command_streams):
 #
 # PIPELINE FUNCTION
 #
+pipeline_filename = ".pipelines.csv"
+def _readlocal_pipelines(pipeline_csv=pipeline_filename):
+	try:
+		data = pandas.read_csv(pipeline_csv,dtype=str)
+	except:
+		data = pandas.DataFrame()
+	return data
+
+def _addlocal(data,row):
+	item = pandas.DataFrame(row)
+	if len(data) == 0:
+		return item
+	else:
+		return pandas.concat([data.set_index(['name']),item.set_index(['name'])],verify_integrity=True).reset_index()
+
+def _writelocal_pipelines(data,pipeline_csv=pipeline_filename):
+	data.to_csv(pipeline_csv,index=False,columns=data.columns)
+
+def _runlocal(name,image_name,github,branch,entry,inputfolder,outputfolder):
+	client = docker.from_env()
+	try:
+		client.get(image_name)
+	except:
+		client.images.pull(image_name)
+
+	container = client.containers.run(image_name,
+		command = f"sh -c 'git clone {github} -b {branch} --depth 1 /tmp/openfido ; cd /tmp/openfido ; export OPENFIDO_INPUT=/tmp/input ; export OPENFIDO_OUTPUT=/tmp/output ; source /tmp/openfido/{entry} 0</dev/null 1>/tmp/output/stdout 2>/tmp/output/stderr' ",
+		auto_remove = True,
+		volumes = {
+			inputfolder : {"bind" : "/tmp/input", "mode" : "ro" },
+			outputfolder : {"bind" : "/tmp/output", "mode" : "rw" },
+		})
+
 def pipeline(options=[], stream=command_streams):
 	"""Syntax: openfido [OPTIONS] pipeline COMMAND [OPTIONS]
 
@@ -477,7 +510,64 @@ def pipeline(options=[], stream=command_streams):
 
 	The `pipeline` function is used to create and start pipeline operations.
 	"""
-	raise Exception("pipeline CLI not implemented yet")
+	if len(options) < 1:
+		raise Exception("missing pipeline command")
+	command = options[0]
+	local = False
+	args = []
+	for option in options[1:]:
+		if option[0] == '-':
+			if option in ["-l","--local"]:
+				local = True
+			else:
+				stream["error"](f"option '{option}' is not valid")
+				return
+		else:
+			args.append(option)
+	if command == "create":
+		if len(args) < 5:
+			raise Exception("missing one or more pipeline create arguments ({args})")
+		if len(args) > 6:
+			raise Exception("too many pipeline create arguments ({args})")
+		pipeline = args[0]
+		docker = args[1]
+		github = args[2]
+		branch = args[3]
+		entry = args[4]
+		if len(args) > 5:
+			description = args[5]
+		else:
+			description = ""
+		if local:
+			data = _readlocal_pipelines()
+			data = _addlocal(data,{
+				'name':[pipeline],
+				'docker':[docker],
+				'github':[github],
+				'branch':[branch],
+				'entry':[entry],
+				'description':[description],
+				})
+			_writelocal_pipelines(data)
+		else:
+			raise Exception(f"remote pipeline create not implemented yet ({args})")
+	elif command == "start":
+		if len(args) < 3:
+			raise Exception("missing one or more pipeline start arguments ({args})")
+		if len(args) > 3:
+			raise Exception("too many pipeline start arguments ({args})")
+		pipeline = args[0]
+		inputfolder = args[1]
+		outputfolder = args[2]
+		if local:
+			data = _readlocal_pipelines().set_index("name")
+			spec = data.loc[pipeline]
+			_runlocal(pipeline,spec["docker"],spec["github"],spec["branch"],spec["entry"],inputfolder,outputfolder)
+		else:
+			raise Exception(f"remote pipeline start not implemented yet ({args})")
+	else:
+		raise Exception(f"invalid pipeline command (command='{command}')")
+
 
 #
 # WORKFLOW FUNCTION

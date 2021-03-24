@@ -129,3 +129,4 @@ dmypy.json
 .pyre/
 src/openfido.err
 .DS_Store
+.pipelines.csv
