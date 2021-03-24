@@ -574,7 +574,7 @@ def pipeline(options=[], stream=command_streams):
 		if local:
 			data = _readlocal_pipelines().set_index("name")
 			data = data.drop(pipeline)
-			_writelocal_pipelines(data)
+			_writelocal_pipelines(data.reset_index())
 		else:
 			raise Exception(f"remote pipeline delete not implemented yet (args={args})")
 	elif command == "list":
