@@ -506,7 +506,9 @@ def pipeline(options=[], stream=command_streams):
 
 	Commands:
 		create [-l|--local] NAME DOCKER GITHUB BRANCH ENTRY [DESCRIPTION]
-		start  [-l|--local] NAME INPUTFOLDER OUTPUTFOLDER 
+		start [-l|--local] NAME INPUTFOLDER OUTPUTFOLDER 
+		delete [-l|--local] NAME
+		list [-l|--local]
 
 	The `pipeline` function is used to create and start pipeline operations.
 	"""
@@ -526,9 +528,9 @@ def pipeline(options=[], stream=command_streams):
 			args.append(option)
 	if command == "create":
 		if len(args) < 5:
-			raise Exception("missing one or more pipeline create arguments ({args})")
+			raise Exception(f"missing one or more pipeline create arguments (args={args})")
 		if len(args) > 6:
-			raise Exception("too many pipeline create arguments ({args})")
+			raise Exception(f"too many pipeline create arguments (args={args})")
 		pipeline = args[0]
 		docker = args[1]
 		github = args[2]
@@ -550,12 +552,12 @@ def pipeline(options=[], stream=command_streams):
 				})
 			_writelocal_pipelines(data)
 		else:
-			raise Exception(f"remote pipeline create not implemented yet ({args})")
+			raise Exception(f"remote pipeline create not implemented yet (args={args})")
 	elif command == "start":
 		if len(args) < 3:
-			raise Exception("missing one or more pipeline start arguments ({args})")
+			raise Exception(f"missing one or more pipeline start arguments (args={args})")
 		if len(args) > 3:
-			raise Exception("too many pipeline start arguments ({args})")
+			raise Exception(f"too many pipeline start arguments (args={args})")
 		pipeline = args[0]
 		inputfolder = args[1]
 		outputfolder = args[2]
@@ -564,7 +566,24 @@ def pipeline(options=[], stream=command_streams):
 			spec = data.loc[pipeline]
 			_runlocal(pipeline,spec["docker"],spec["github"],spec["branch"],spec["entry"],inputfolder,outputfolder)
 		else:
-			raise Exception(f"remote pipeline start not implemented yet ({args})")
+			raise Exception(f"remote pipeline start not implemented yet (args={args})")
+	elif command == "delete":
+		if len(args) < 1:
+			raise Exception(f"missing pipeline delete argument (args={args})")
+		pipeline = args[0]
+		if local:
+			data = _readlocal_pipelines().set_index("name")
+			data = data.drop(pipeline)
+			_writelocal_pipelines(data)
+		else:
+			raise Exception(f"remote pipeline delete not implemented yet (args={args})")
+	elif command == "list":
+		if local:
+			data = _readlocal_pipelines().set_index("name")
+			for item in data.index:
+				print(item)
+		else:
+			raise Exception(f"remote pipeline delete not implemented yet (args={args})")
 	else:
 		raise Exception(f"invalid pipeline command (command='{command}')")
 
