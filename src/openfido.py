@@ -464,3 +464,16 @@ def server(options=[], stream=command_streams):
 		raise Exception("too many server commands")
 	else:
 		subprocess.run(["/usr/local/bin/openfido-server",options[0]])
+
+#
+# PIPELINE FUNCTION
+#
+def pipeline(options=[], stream=command_streams):
+	raise Exception("pipeline CLI not implemented yet")
+
+#
+# WORKFLOW FUNCTION
+#
+def workflow(options=[], stream=command_streams):
+	raise Exception("workflow CLI not implemented yet")
+
