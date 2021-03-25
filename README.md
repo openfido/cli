@@ -18,6 +18,9 @@ The command `openfido` supports the following subcommands:
 * `openfido [OPTIONS] remove FUNCTION ...`
 * `openfido [OPTIONS] run FUNCTION [OPTIONS] inputlist outputlist`
 * `openfido [OPTIONS] update FUNCTION ...`
+* `openfido [OPTIONS] server [start|stop|restart|status|update|open]`
+* `openfido [OPTIONS] pipeline [create|start|delete|list] [ARGUMENTS]`
+* `openfido [OPTIONS] workflow [create|start|delete|list] [ARGUMENTS]`
 
 ## Options
 

@@ -2,7 +2,7 @@
 """OpenFIDO Command Line Interface (CLI)
 """
 
-import sys, os, traceback, datetime, inspect
+import sys, os, traceback, datetime, inspect, getversion
 
 sys.path.append(".")
 sys.path.append(os.getenv("HOME")+"/.openfido")
@@ -115,6 +115,9 @@ def main(*args):
             config.verbose = True
         elif args[n] in ['-q','--quiet']:
             config.quiet = True
+        elif args[n] in ['--version']:
+            poutput(openfido.__version__)
+            sys.exit(0)
         else:
             perror(f"command option '{args[n]}' is not valid")
         n += 1

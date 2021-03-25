@@ -3,8 +3,10 @@
 Syntax: openfido [OPTIONS] FUNCTION [...]
 
 Options:
-	-v|--verbose   enables more output
+	-h|--help      output this help
 	-q|--quiet     enables less output
+	-v|--verbose   enables more output
+	--version      output version number
 
 Authentication methods:
 
@@ -17,6 +19,8 @@ Authentication methods:
 	$HOME/.github/access-token file:
 		<your-token>
 """
+
+__version__ = "0.0.1"
 
 import os, sys, glob, pydoc, warnings, subprocess, signal
 import requests, shutil, importlib, pandas, docker
@@ -41,31 +45,38 @@ except:
 
 # get authorization token
 try:
-	import github_auth as _auth
+	import github_auth as authentication_token
 except:
 	# template class using environment variable
-	class _auth:
+	class authentication_token:
 		token = os.getenv('GITHUB_TOKEN',None)
-	if not _auth.token:
+	if not authentication_token.token:
 		# try reading file $HOME/.github/access-token
 		try:
 			token_file = f"{os.getenv('HOME','')}/.github/access-token"
 			_fh = open(token_file,"r")
-			_auth.token = _fh.read()
+			authentication_token.token = _fh.read()
 		except Exception as exc:
 			pass
 	pass
 
 # default streams
-def _error(msg,exit=None):
+def error(msg,exit=None):
 	print(msg,file=sys.stderr)
 	if exit:
 		sys.exit(exit)
-def _silent(msg,exit=None):
+def silent(msg,exit=None):
 	if exit:
 		sys.exit(exit)
-default_streams = {"output":_silent, "warning":warnings.warn, "error":_error, "verbose":_silent, "quiet":_silent}
-command_streams = {"output":print, "warning":warnings.warn, "error":_error, "verbose":_silent, "quiet":_silent}
+default_streams = {"output":silent, "warning":warnings.warn, "error":error, "verbose":silent, "quiet":silent}
+command_streams = {"output":print, "warning":warnings.warn, "error":error, "verbose":silent, "quiet":silent}
+
+#
+# FUNCTION VALIDATE
+#
+callable_functions = ["config","help","index","info","install","show","update","run","server","pipeline","workflow"]
+def is_valid(function):
+	return function in callable_functions
 
 #
 # CONFIG FUNCTION
@@ -151,17 +162,16 @@ def help(options=[], stream=default_streams):
 	if not options:
 		stream["output"](mod.__doc__)
 		stream["output"]("Functions:")
-		for entry in sorted(dir(mod)):
+		for entry in callable_functions:
 			call = getattr(mod,entry)
-			if entry[0] != '_' and callable(call):
-				text = pydoc.render_doc(call,renderer=pydoc.plaintext).split("\n")[3].strip()
-				stream["output"](f"\t{text.replace('Syntax: ','')}")
+			text = pydoc.render_doc(call,renderer=pydoc.plaintext).split("\n")[3].strip()
+			stream["output"](f"\t{text.replace('Syntax: ','')}")
 		stream["output"]("")
 	elif not type(options) is list:
 		raise Exception("help options must be a list")
 	elif len(options) > 1:
 		raise Exception("help is only available on one command at a time")
-	elif hasattr(mod,options[0]):
+	elif is_valid(options[0]):
 		call = getattr(mod,options[0])
 		text = pydoc.render_doc(call,renderer=pydoc.plaintext).split("\n")[3:]
 		for line in text:
@@ -179,8 +189,8 @@ def index(options=[], stream=default_streams):
 	The `index` function lists the contents of the public openfido product library.
 	"""
 	headers = {}
-	if _auth.token:
-		headers = {"Authorization": f"token {_auth.token.strip()}"}
+	if authentication_token.token:
+		headers = {"Authorization": f"token {authentication_token.token.strip()}"}
 	else:
 		stream["verbose"]("using unauthenticated access")
 	url = f"{apiurl}/orgs/{orgname}/repos"
@@ -189,7 +199,7 @@ def index(options=[], stream=default_streams):
 		raise Exception(f"unable to reach repo list for org '{orgname}' at {apiurl}")
 	elif not type(data) is list:
 		raise Exception(f"API error for org '{orgname}' at {url}: response ({type(data)}) = {data}")
-	if _auth.token:
+	if authentication_token.token:
 		stream["verbose"]("access token ok")
 	repos = dict(zip(list(map(lambda r:r['name'],data)),data))
 	if len(options) > 0:
@@ -257,8 +267,8 @@ def install(options=[], stream=default_streams):
 	The `install` command installs one or more public openfido products on the local system.
 	"""
 	headers = {}
-	if _auth.token:
-		headers = {"Authorization": f"token {_auth.token.strip()}"}
+	if authentication_token.token:
+		headers = {"Authorization": f"token {authentication_token.token.strip()}"}
 	else:
 		stream["verbose"]("using unauthenticated access")
 	url = f"{apiurl}/orgs/{orgname}/repos"
@@ -267,7 +277,7 @@ def install(options=[], stream=default_streams):
 		raise Exception(f"unable to reach repo list for org '{orgname}' at {apiurl}")
 	elif not type(data) is list:
 		raise Exception(f"API error for org '{orgname}' at {url}: response ({type(data)}) = {data}")
-	if _auth.token:
+	if authentication_token.token:
 		stream["verbose"]("access token ok")
 	repos = dict(zip(list(map(lambda r:r['name'],data)),data))
 	dryrun = os.system
@@ -469,24 +479,24 @@ def server(options=[], stream=command_streams):
 # PIPELINE FUNCTION
 #
 pipeline_filename = ".pipelines.csv"
-def _readlocal_pipelines(pipeline_csv=pipeline_filename):
+def readlocal_pipelines(pipeline_csv=pipeline_filename):
 	try:
 		data = pandas.read_csv(pipeline_csv,dtype=str)
 	except:
 		data = pandas.DataFrame()
 	return data
 
-def _addlocal(data,row):
+def addlocal_pipeline(data,row):
 	item = pandas.DataFrame(row)
 	if len(data) == 0:
 		return item
 	else:
 		return pandas.concat([data.set_index(['name']),item.set_index(['name'])],verify_integrity=True).reset_index()
 
-def _writelocal_pipelines(data,pipeline_csv=pipeline_filename):
+def writelocal_pipelines(data,pipeline_csv=pipeline_filename):
 	data.to_csv(pipeline_csv,index=False,columns=data.columns)
 
-def _runlocal(name,image_name,github,branch,entry,inputfolder,outputfolder):
+def runlocal_pipepline(name,image_name,github,branch,entry,inputfolder,outputfolder):
 	client = docker.from_env()
 	try:
 		client.get(image_name)
@@ -504,13 +514,14 @@ def _runlocal(name,image_name,github,branch,entry,inputfolder,outputfolder):
 def pipeline(options=[], stream=command_streams):
 	"""Syntax: openfido [OPTIONS] pipeline COMMAND [OPTIONS]
 
-	Commands:
+	The `pipeline` function is used to create and start pipeline operations.
+
+	COMMAND:
+
 		create [-l|--local] NAME DOCKER GITHUB BRANCH ENTRY [DESCRIPTION]
 		start [-l|--local] NAME INPUTFOLDER OUTPUTFOLDER 
 		delete [-l|--local] NAME
 		list [-l|--local]
-
-	The `pipeline` function is used to create and start pipeline operations.
 	"""
 	if len(options) < 1:
 		raise Exception("missing pipeline command")
@@ -541,8 +552,8 @@ def pipeline(options=[], stream=command_streams):
 		else:
 			description = ""
 		if local:
-			data = _readlocal_pipelines()
-			data = _addlocal(data,{
+			data = readlocal_pipelines()
+			data = addlocal_pipeline(data,{
 				'name':[pipeline],
 				'docker':[docker],
 				'github':[github],
@@ -550,7 +561,7 @@ def pipeline(options=[], stream=command_streams):
 				'entry':[entry],
 				'description':[description],
 				})
-			_writelocal_pipelines(data)
+			writelocal_pipelines(data)
 		else:
 			raise Exception(f"remote pipeline create not implemented yet (args={args})")
 	elif command == "start":
@@ -562,9 +573,9 @@ def pipeline(options=[], stream=command_streams):
 		inputfolder = args[1]
 		outputfolder = args[2]
 		if local:
-			data = _readlocal_pipelines().set_index("name")
+			data = readlocal_pipelines().set_index("name")
 			spec = data.loc[pipeline]
-			_runlocal(pipeline,spec["docker"],spec["github"],spec["branch"],spec["entry"],inputfolder,outputfolder)
+			runlocal_pipepline(pipeline,spec["docker"],spec["github"],spec["branch"],spec["entry"],inputfolder,outputfolder)
 		else:
 			raise Exception(f"remote pipeline start not implemented yet (args={args})")
 	elif command == "delete":
@@ -572,14 +583,14 @@ def pipeline(options=[], stream=command_streams):
 			raise Exception(f"missing pipeline delete argument (args={args})")
 		pipeline = args[0]
 		if local:
-			data = _readlocal_pipelines().set_index("name")
+			data = readlocal_pipelines().set_index("name")
 			data = data.drop(pipeline)
-			_writelocal_pipelines(data.reset_index())
+			writelocal_pipelines(data.reset_index())
 		else:
 			raise Exception(f"remote pipeline delete not implemented yet (args={args})")
 	elif command == "list":
 		if local:
-			data = _readlocal_pipelines().set_index("name")
+			data = readlocal_pipelines().set_index("name")
 			for item in data.index:
 				print(item)
 		else:
@@ -594,11 +605,12 @@ def pipeline(options=[], stream=command_streams):
 def workflow(options=[], stream=command_streams):
 	"""Syntax: openfido [OPTIONS] workflow COMMAND [OPTIONS]
 
-	Commands:
+	The `pipeline` function is used to create and start pipeline operations.
+
+	COMMAND:
+	
 		create [-l|--local] SPECFILE
 		start  [-l|--local] NAME INPUTFOLDER OUTPUTFOLDER 
-
-	The `pipeline` function is used to create and start pipeline operations.
 	"""
 	raise Exception("workflow CLI not implemented yet")
 
