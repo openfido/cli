@@ -2,7 +2,7 @@
 """OpenFIDO Command Line Interface (CLI)
 """
 
-import sys, os, traceback, datetime, inspect, getversion
+import sys, os, traceback, datetime, inspect
 
 sys.path.append(".")
 sys.path.append(os.getenv("HOME")+"/.openfido")
