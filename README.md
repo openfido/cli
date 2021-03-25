@@ -26,8 +26,10 @@ The command `openfido` supports the following subcommands:
 
 The following general options are available
 
-* `-v|--verbose`   enable extra output
+* `-h|--help`      get basic help
 * `-q|--quiet`     disable unnecessary output
+* `-v|--verbose`   enable extra output
+* `--version`      print the version number 
 
 # Developers
 
