@@ -288,7 +288,6 @@ def install(options=[], config=[], stream=default_streams):
 	dryrun = os.system
 	failed = []
 	done = []
-	print("install options: ", options)
 	for option in options:
 		if option[0] == '-':
 			if option in ['-d','--dry-run']:
@@ -329,7 +328,7 @@ def install(options=[], config=[], stream=default_streams):
 					repo = Repository(target)
 					existing_branch = repo.head.name.split("/")[-1]
 					if branch == existing_branch:
-						stream["warning"](f"'{name}' is already installed in branch '{existing_branch}'")
+						pass
 					else:
 						stream["warning"](f"'{name}' is already installed in branch '{existing_branch}'. Repo branch will be switched to '{branch}'")
 						remove([name],config,stream)
@@ -451,7 +450,6 @@ def run(options=[], config=[], stream=command_streams):
 	cache = config.cache
 	branch = config.branch
 	path = f"{cache}/{name}"
-	print("path: ", path)
 	if not os.path.exists(f"{path}/openfido.json"):
 		raise Exception(f"'{cache}/{name}' not found")
 	if not install([name],config,stream)["ok"]:
@@ -482,7 +480,8 @@ def run(options=[], config=[], stream=command_streams):
 		inputs = ["/dev/stdin"]
 	if not outputs:
 		outputs = ["/dev/stdout"]
-	print("run flags: ", flags)
+	# inputs will be the name of input file
+	# outputs will be the name of output files
 	return module.main(inputs=inputs,outputs=outputs,options=flags)
 
 #
