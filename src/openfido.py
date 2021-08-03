@@ -450,9 +450,7 @@ def run(options=[], config=[], stream=command_streams):
 	cache = config.cache
 	branch = config.branch
 	path = f"{cache}/{name}"
-	if not os.path.exists(f"{path}/openfido.json"):
-		raise Exception(f"'{cache}/{name}' not found")
-	if not install([name],config,stream)["ok"]:
+	if not install([name],config,stream)["ok"] and not os.path.exists(f"{path}/openfido.json"):
 		raise Exception(f"unable to install '{name}' in branch '{branch}' into openfido cache '{cache}'")
 	sys.path.append(f"{cache}/{name}")
 	if not os.path.exists(f"{path}/__init__.py"):
@@ -480,8 +478,6 @@ def run(options=[], config=[], stream=command_streams):
 		inputs = ["/dev/stdin"]
 	if not outputs:
 		outputs = ["/dev/stdout"]
-	# inputs will be the name of input file
-	# outputs will be the name of output files
 	return module.main(inputs=inputs,outputs=outputs,options=flags)
 
 #
