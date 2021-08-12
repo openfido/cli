@@ -245,7 +245,6 @@ def info(options=[], config=[], stream=default_streams):
 	name = options[0]
 	cache = config.cache
 	path = f"{cache}/{name}/__init__.py"
-	print("path: ", path)
 	if os.path.exists(path):
 		stream["verbose"](f"examining {path}")
 		spec = importlib.util.spec_from_file_location(name,path)
