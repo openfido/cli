@@ -443,6 +443,7 @@ def run(options=[], config=[], stream=command_streams):
 
 	The `run` function runs an openfido product on the local system.
 	"""
+	print(55555)
 	if not options:
 		raise Exception("missing package name")
 	name = options[0]
@@ -477,6 +478,7 @@ def run(options=[], config=[], stream=command_streams):
 		inputs = ["/dev/stdin"]
 	if not outputs:
 		outputs = ["/dev/stdout"]
+	print(66666)
 	return module.main(inputs=inputs,outputs=outputs,options=flags)
 
 #
