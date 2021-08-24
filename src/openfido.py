@@ -306,7 +306,8 @@ def install(options=[], stream=default_streams):
 				manifest = None
 			if not manifest:
 				stream["error"](f"manifest read failed: url={url}, status_code={data.status_code}, headers={data.headers}, body=[{data.text}]") 
-			if not "application" in manifest.keys() or manifest["application"] != "openfido":
+				failed.append(name)
+			elif not "application" in manifest.keys() or manifest["application"] != "openfido":
 				stream["error"](f"tool '{name}' is not an openfido application")
 				failed.append(name)
 			elif not "valid" in manifest.keys() or not manifest["valid"]:
