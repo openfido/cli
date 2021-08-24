@@ -264,6 +264,7 @@ def install(options=[], config=[], stream=default_streams):
 
 	The `install` command installs one or more public openfido products on the local system.
 	"""
+	print(test)
 	headers = {}
 	if authentication_token.token:
 		headers = {"Authorization": f"token {authentication_token.token.strip()}"}
