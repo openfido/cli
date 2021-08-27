@@ -276,7 +276,10 @@ def install(options=[], config=[], stream=default_streams):
 	rawurl = config.rawurl
 	giturl = config.giturl
 	url = f"{apiurl}/orgs/{orgname}/repos"
-	data = requests.get(url,headers=headers,params={}).json()
+	try:
+		data = requests.get(url,headers=headers,params={}).json()
+	except:
+		raise Exception(f"cannot get repo data")
 	if not data:
 		raise Exception(f"unable to reach repo list for org '{orgname}' at {apiurl}")
 	elif not type(data) is list:
