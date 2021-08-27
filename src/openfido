@@ -110,7 +110,7 @@ def main(*args):
     """gridlabd-openfido main function"""
     execname = args[0]
     n = 1
-    while len(args) > n and (args[n][0] == '-' or "=" in args[n]):
+    while len(args) > n and args[n][0] == '-':
         if args[n] in ['-v','--verbose']:
             config.verbose = True
         elif args[n] in ['-q','--quiet']:
@@ -118,17 +118,10 @@ def main(*args):
         elif args[n] in ['--version']:
             poutput(openfido.__version__)
             sys.exit(0)
-        elif "=" in args[n]:
-            item = args[n].split('=')[0]
-            value = args[n].split('=')[1]
-            exec(f"config.{item} = '{value}'")
         else:
             perror(f"command option '{args[n]}' is not valid")
         n += 1
-    if '-h' in args or '--help' in args:
-        command = "help"
-        options = []
-    elif len(args) > n:
+    if len(args) > n:
         command = args[n]
         if len(sys.argv) > n+1:
             options = list(args[n+1:])
@@ -140,7 +133,7 @@ def main(*args):
     if hasattr(openfido,command):
         try:
             call = getattr(openfido,command)
-            result = call(options=options,config=config,stream=config.streams)
+            result = call(options=options,stream=config.streams)
             pverbose(result)
         except Exception as err:
             if hasattr(config,"traceback_file"):
