@@ -276,6 +276,8 @@ def install(options=[], config=[], stream=default_streams):
 	rawurl = config.rawurl
 	giturl = config.giturl
 	url = f"{apiurl}/orgs/{orgname}/repos"
+	raise Exception(f"openfido install test")
+	sys.exit(5)
 	try:
 		data = requests.get(url,headers=headers,params={}).json()
 	except:
