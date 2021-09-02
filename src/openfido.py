@@ -492,7 +492,7 @@ def server(options=[], config=[], stream=command_streams):
 		raise Exception("missing server command")
 	else:
 		command = ["/usr/local/bin/openfido-server"]
-		command.append(options)
+		command.extend(options)
 		subprocess.run(command)
 
 #
