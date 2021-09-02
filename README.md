@@ -40,4 +40,3 @@ If you want to install the CLI from another branch, use the following command:
 ~~~
 curl -sL https://raw.githubusercontent.com/openfido/cli/YOUR-BRANCHNAME/install.sh | bash
 ~~~
-
