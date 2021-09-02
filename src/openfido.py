@@ -490,10 +490,10 @@ def server(options=[], config=[], stream=command_streams):
 	"""
 	if len(options) == 0:
 		raise Exception("missing server command")
-	elif len(options) > 1:
-		raise Exception("too many server commands")
 	else:
-		subprocess.run(["/usr/local/bin/openfido-server",options[0]])
+		command = ["/usr/local/bin/openfido-server"]
+		command.append(options)
+		subprocess.run(command)
 
 #
 # PIPELINE FUNCTION
