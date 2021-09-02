@@ -18,7 +18,7 @@ The command `openfido` supports the following subcommands:
 * `openfido [OPTIONS] remove FUNCTION ...`
 * `openfido [OPTIONS] run FUNCTION [OPTIONS] inputlist outputlist`
 * `openfido [OPTIONS] update FUNCTION ...`
-* `openfido [OPTIONS] server [start|stop|restart|status|update|open]`
+* `openfido [OPTIONS] server [--imagename IMAGENAME[:TAG]] [start|stop|restart|status|update|open]`
 * `openfido [OPTIONS] pipeline [create|start|delete|list] [ARGUMENTS]`
 * `openfido [OPTIONS] workflow [create|start|delete|list] [ARGUMENTS]`
 
@@ -34,3 +34,10 @@ The following general options are available
 # Developers
 
 See the `dev` folder for details on developer tools.
+
+If you want to install the CLI from another branch, use the following command:
+
+~~~
+curl -sL https://raw.githubusercontent.com/openfido/cli/YOUR-BRANCHNAME/install.sh | bash
+~~~
+
