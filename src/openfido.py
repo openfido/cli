@@ -484,7 +484,7 @@ def run(options=[], config=[], stream=command_streams):
 # SERVER FUNCTION
 #
 def server(options=[], config=[], stream=command_streams):
-	"""Syntax: openfido [OPTIONS] server [start|stop|restart|status|update|open]
+	"""Syntax: openfido [OPTIONS] server [--imagename IMAGENAME[:TAG]] [start|stop|restart|status|update|open]
 
 	The `server` function controls the local openfido server running on docker.
 	"""
