@@ -5,6 +5,7 @@ LOGFILE="/var/log/openfido.log"
 touch $LOGFILE 1>/dev/null 2>&1|| LOGFILE="openfido.log"
 
 HOSTNAME="127.0.0.1"
+IMAGENAME="openfido/openfido:latest"
 
 PORTNUM="3000"
 
@@ -31,7 +32,7 @@ function warning()
 function update ()
 {
 	echo -n "Checking for updates..."
-	docker pull openfido/openfido 1>/dev/null 2>/dev/null
+	docker pull ${IMAGENAME} 1>/dev/null 2>/dev/null
 	echo "ok"
 }
 
@@ -66,7 +67,7 @@ function start ()
 	if [ "$(status)" == "STOPPED" ]; then
 		echo -n "Starting openfido server"
 		docker rm openfido-server-1 1>/dev/null 2>/dev/null || true
-		docker run --name openfido-server-1 $OPTIONS -v /tmp:/tmp -v /var/run/docker.sock:/var/run/docker.sock -p $HOSTNAME:5001:5001 -p $HOSTNAME:5002:5002 -p $HOSTNAME:5003:5003 -p $HOSTNAME:9000:9000 -p $HOSTNAME:3000:$PORTNUM openfido/openfido 1>>$LOGFILE 2>&1 &
+		docker run --name openfido-server-1 $OPTIONS -v /tmp:/tmp -v /var/run/docker.sock:/var/run/docker.sock -p $HOSTNAME:5001:5001 -p $HOSTNAME:5002:5002 -p $HOSTNAME:5003:5003 -p $HOSTNAME:9000:9000 -p $HOSTNAME:3000:$PORTNUM ${IMAGENAME} 1>>$LOGFILE 2>&1 &
 		while [ "$(status)" == "STOPPED" ]; do
 			sleep 1
 		done
@@ -105,6 +106,10 @@ function _open()
 	open http://$HOSTNAME:$PORTNUM/	
 }
 
+if [ "$1" == "--branch" -o "$1" == "-b" ]; then
+	IMAGENAME=$2
+	shift 2
+fi
 if [ "$1" == "update" ]; then
 	update
 elif [ "$1" == "start" ]; then
