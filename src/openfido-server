@@ -19,7 +19,7 @@ function error()
 {
 	RC=$1
 	shift 1
-	echo "ERROR: $*"
+	echo "ERROR [openfido-server]: $*"
 	if [ $RC != "NONE" ]; then
 		exit $RC
 	fi
@@ -27,7 +27,7 @@ function error()
 
 function warning()
 {
-	echo "WARNING: $*"
+	echo "WARNING [openfido-server]: $*"
 }
 function update ()
 {
