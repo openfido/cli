@@ -24,12 +24,20 @@ __version__ = "0.0.1"
 
 import os, sys, glob, pydoc, warnings, subprocess, signal
 import requests, shutil, importlib, pandas, docker
-from pygit2 import Repository
 
 sys.path.append(".")
 sys.path.append(os.getenv("HOME")+"/.openfido")
 sys.path.append("/usr/local/bin")
 
+verbose = False # print more messages as work is done
+quiet = False # print fewer messages as work is done
+orgname = "openfido" # default repo for workflows and pipelines
+branch = "main" # default branch to use when downloading workflows and pipelines
+cache = "/usr/local/share/openfido" # additional path for downloaded modules
+apiurl = "https://api.github.com"
+rawurl = "https://raw.githubusercontent.com"
+giturl = "https://github.com"
+traceback_file = "/dev/stderr"
 try:
 	from openfido_config import *
 except:
@@ -73,7 +81,7 @@ def is_valid(function):
 #
 # CONFIG FUNCTION
 #
-def config(options=[], config=[], stream=default_streams):
+def config(options=[], stream=default_streams):
 	"""Syntax: openfido config [show|get VARIABLE|set VARIABLE VALUE]
 
 	The `config` function manages the openfido configuration file.  There are three possible locations
@@ -86,14 +94,14 @@ def config(options=[], config=[], stream=default_streams):
 		options = ["show"]
 	if options[0] == "show" and len(options) == 1:
 		result = {
-			"verbose" : config.verbose,
-			"quiet" : config.quiet,
-			"orgname" : config.orgname,
-			"branch" : config.branch,
-			"cache" : config.cache,
-			"apiurl" : config.apiurl,
-			"rawurl" : config.rawurl,
-			"giturl" : config.giturl,
+			"verbose" : verbose,
+			"quiet" : quiet,
+			"orgname" : orgname,
+			"branch" : branch,
+			"cache" : cache,
+			"apiurl" : apiurl,
+			"rawurl" : rawurl,
+			"giturl" : giturl,
 			"traceback_file" : "openfido.err"		
 		}
 		for key,value in result.items():
@@ -103,20 +111,19 @@ def config(options=[], config=[], stream=default_streams):
 				stream["output"](f"{key}={value}")
 		return result
 	elif options[0] == "get" and len(options) == 2:
-		stream["output"](getattr(config,options[1]))
+		stream["output"](getattr(sys.modules[__name__],options[1]))
 	elif options[0] == "set" and len(options) in (3,4):
 		result = {
-			"verbose" : config.verbose,
-			"quiet" : config.quiet,
-			"orgname" : config.orgname,
-			"branch" : config.branch,
-			"cache" : config.cache,
-			"apiurl" : config.apiurl,
-			"rawurl" : config.rawurl,
-			"giturl" : config.giturl,	
-			"traceback_file" : config.traceback_file
+			"verbose" : verbose,
+			"quiet" : quiet,
+			"orgname" : orgname,
+			"branch" : branch,
+			"cache" : cache,
+			"apiurl" : apiurl,
+			"rawurl" : rawurl,
+			"giturl" : giturl,		
+			"traceback_file" : traceback_file
 		}
-		#TODO
 		if options[1] in ["-l","--local"]:
 			cfgfile = "./openfido_config.py"
 			options = options[1:]
@@ -146,7 +153,7 @@ def config(options=[], config=[], stream=default_streams):
 #
 # HELP FUNCTION
 #
-def help(options=[], config=[], stream=default_streams):
+def help(options=[], stream=default_streams):
 	"""Syntax: openfido help [COMMAND]
 
 	The `help` function displays help information using the python help facility.
@@ -176,7 +183,7 @@ def help(options=[], config=[], stream=default_streams):
 #
 # LIST FUNCTION
 #
-def index(options=[], config=[], stream=default_streams):
+def index(options=[], stream=default_streams):
 	"""Syntax: openfido index [PATTERN]
 
 	The `index` function lists the contents of the public openfido product library.
@@ -186,10 +193,6 @@ def index(options=[], config=[], stream=default_streams):
 		headers = {"Authorization": f"token {authentication_token.token.strip()}"}
 	else:
 		stream["verbose"]("using unauthenticated access")
-	apiurl = config.apiurl
-	orgname = config.orgname
-	branch = config.branch
-	rawurl = config.rawurl
 	url = f"{apiurl}/orgs/{orgname}/repos"
 	data = requests.get(url,headers=headers,params={}).json()
 	if not data:
@@ -233,7 +236,7 @@ def index(options=[], config=[], stream=default_streams):
 #
 # INFO FUNCTION
 #
-def info(options=[], config=[], stream=default_streams):
+def info(options=[], stream=default_streams):
 	"""Syntax: openfido info PRODUCT
 
 	The `info` function displays information about a public openfido product.
@@ -243,7 +246,6 @@ def info(options=[], config=[], stream=default_streams):
 	elif len(options) > 1:
 		raise Exception("only one product name is allowed")
 	name = options[0]
-	cache = config.cache
 	path = f"{cache}/{name}/__init__.py"
 	if os.path.exists(path):
 		stream["verbose"](f"examining {path}")
@@ -259,7 +261,7 @@ def info(options=[], config=[], stream=default_streams):
 #
 # INSTALL FUNCTION
 #
-def install(options=[], config=[], stream=default_streams):
+def install(options=[], stream=default_streams):
 	"""Syntax: openfido [OPTIONS] install [-d|--dryrun] PRODUCT ...
 
 	The `install` command installs one or more public openfido products on the local system.
@@ -269,12 +271,6 @@ def install(options=[], config=[], stream=default_streams):
 		headers = {"Authorization": f"token {authentication_token.token.strip()}"}
 	else:
 		stream["verbose"]("using unauthenticated access")
-	apiurl = config.apiurl
-	cache = config.cache
-	orgname = config.orgname
-	branch = config.branch
-	rawurl = config.rawurl
-	giturl = config.giturl
 	url = f"{apiurl}/orgs/{orgname}/repos"
 	data = requests.get(url,headers=headers,params={}).json()
 	if not data:
@@ -293,6 +289,7 @@ def install(options=[], config=[], stream=default_streams):
 				dryrun = stream["output"]
 			else:
 				raise Exception(f"option '{option}' is invalid")
+
 	for name in options:
 		if name[0] == '-':
 			continue
@@ -309,8 +306,7 @@ def install(options=[], config=[], stream=default_streams):
 				manifest = None
 			if not manifest:
 				stream["error"](f"manifest read failed: url={url}, status_code={data.status_code}, headers={data.headers}, body=[{data.text}]") 
-				failed.append(name)
-			elif not "application" in manifest.keys() or manifest["application"] != "openfido":
+			if not "application" in manifest.keys() or manifest["application"] != "openfido":
 				stream["error"](f"tool '{name}' is not an openfido application")
 				failed.append(name)
 			elif not "valid" in manifest.keys() or not manifest["valid"]:
@@ -325,18 +321,7 @@ def install(options=[], config=[], stream=default_streams):
 				source = f"{giturl}/{orgname}/{name}"
 				target = f"{cache}/{name}"
 				if os.path.exists(target):
-					repo = Repository(target)
-					existing_branch = repo.head.name.split("/")[-1]
-					if branch == existing_branch:
-						pass
-					else:
-						stream["warning"](f"'{name}' is already installed in branch '{existing_branch}'. Repo branch will be switched to '{branch}'")
-						remove([name],config,stream)
-						if dryrun(f"git clone -q {source} {target} -b {branch} --depth 1") != 0:
-							failed.append(name)
-						else:
-							stream["verbose"](f"'{name}' cloned ok")
-							done.append(name)
+					stream["warning"](f"'{name}' is already installed")
 					done.append(name)
 				elif os.system(f"git clone -q {source} {target} -b {branch} --depth 1") != 0:
 					stream["error"](f"unable to clone '{name}' into openfido cache '{cache}'")
@@ -345,20 +330,19 @@ def install(options=[], config=[], stream=default_streams):
 					stream["verbose"](f"'{name}' cloned ok")
 					done.append(name)
 				# TODO: implement installation
-				# done.append(name)
+				done.append(name)
 	return {"ok":len(done), "errors":len(failed), "done":done, "failed": failed}
 
 #
 # SHOW FUNCTION
 #
-def show(options=[], config=[], stream=default_streams):
+def show(options=[], stream=default_streams):
 	"""Syntax: openfido [OPTIONS] show PATTERN ...
 	
 	The `show` function prints out the products with names that match PATTERN.
 	"""
 	if not options:
 		options = ["*"]
-	cache = config.cache
 	for pattern in options:
 		for path in glob.iglob(f"{cache}/{pattern}"):
 			name = path.split("/")[-1]
@@ -377,14 +361,13 @@ def show(options=[], config=[], stream=default_streams):
 #
 # UPDATE FUNCTION
 #
-def update(options=[], config=[], stream=default_streams):
+def update(options=[], stream=default_streams):
 	"""Syntax: openfido [OPTIONS] update [-d|--dryrun] PRODUCT ...
 
 	The `update` function brings one or more products on the local system up to date with the 
 	most recent public versions.
 	"""
 	dryrun = os.system
-	cache = config.cache
 	done = []
 	failed = []
 	for option in options:
@@ -407,13 +390,12 @@ def update(options=[], config=[], stream=default_streams):
 #
 # REMOVE FUNCTION
 #
-def remove(options=[], config=[], stream=default_streams):
+def remove(options=[], stream=default_streams):
 	"""Syntax: openfido [OPTIONS] remove [-d|--dryrun] PRODUCT ...
 
 	The `remove` function removes one or more products from the local system.
 	"""
 	dryrun = os.system
-	cache = config.cache
 	done = []
 	failed = []
 	for option in options:
@@ -439,7 +421,7 @@ def remove(options=[], config=[], stream=default_streams):
 #
 # RUN FUNCTION
 #
-def run(options=[], config=[], stream=command_streams):
+def run(options=[], stream=command_streams):
 	"""Syntax: openfido [OPTIONS] run PRODUCT [OPTIONS ...] INPUTFILES [OUTPUTFILES]
 
 	The `run` function runs an openfido product on the local system.
@@ -447,11 +429,9 @@ def run(options=[], config=[], stream=command_streams):
 	if not options:
 		raise Exception("missing package name")
 	name = options[0]
-	cache = config.cache
-	branch = config.branch
 	path = f"{cache}/{name}"
-	if not install([name],config,stream)["ok"] and not os.path.exists(f"{path}/openfido.json"):
-		raise Exception(f"unable to install '{name}' in branch '{branch}' into openfido cache '{cache}'")
+	if not os.path.exists(f"{path}/openfido.json") and not install([name],stream):
+		raise Exception(f"'{cache}/{name}' not found")
 	sys.path.append(f"{cache}/{name}")
 	if not os.path.exists(f"{path}/__init__.py"):
 		raise Exception(f"'{path}/__init__.py' not found")
@@ -531,7 +511,7 @@ def runlocal_pipepline(name,image_name,github,branch,entry,inputfolder,outputfol
 			outputfolder : {"bind" : "/tmp/output", "mode" : "rw" },
 		})
 
-def pipeline(options=[], config=[], stream=command_streams):
+def pipeline(options=[], stream=command_streams):
 	"""Syntax: openfido [OPTIONS] pipeline COMMAND [OPTIONS]
 
 	The `pipeline` function is used to create and start pipeline operations.
@@ -622,7 +602,7 @@ def pipeline(options=[], config=[], stream=command_streams):
 #
 # WORKFLOW FUNCTION
 #
-def workflow(options=[], config=[], stream=command_streams):
+def workflow(options=[], stream=command_streams):
 	"""Syntax: openfido [OPTIONS] workflow COMMAND [OPTIONS]
 
 	The `pipeline` function is used to create and start pipeline operations.
