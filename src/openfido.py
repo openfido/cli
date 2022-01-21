@@ -20,7 +20,7 @@ Authentication methods:
 		<your-token>
 """
 
-__version__ = "0.0.1"
+__version__ = "0.0.2"
 
 import os, sys, glob, pydoc, warnings, subprocess, signal
 import requests, shutil, importlib, pandas, docker
@@ -74,7 +74,7 @@ command_streams = {"output":print, "warning":warnings.warn, "error":error, "verb
 #
 # FUNCTION VALIDATE
 #
-callable_functions = ["config","help","index","info","install","show","update","run","server","pipeline","workflow"]
+callable_functions = ["config","help","index","info","install","show","update","run","server","pipeline","workflow","version"]
 def is_valid(function):
 	return function in callable_functions
 
@@ -306,7 +306,8 @@ def install(options=[], stream=default_streams):
 				manifest = None
 			if not manifest:
 				stream["error"](f"manifest read failed: url={url}, status_code={data.status_code}, headers={data.headers}, body=[{data.text}]") 
-			if not "application" in manifest.keys() or manifest["application"] != "openfido":
+				failed.append(name)
+			elif not "application" in manifest.keys() or manifest["application"] != "openfido":
 				stream["error"](f"tool '{name}' is not an openfido application")
 				failed.append(name)
 			elif not "valid" in manifest.keys() or not manifest["valid"]:
@@ -614,3 +615,12 @@ def workflow(options=[], stream=command_streams):
 	"""
 	raise Exception("workflow CLI not implemented yet")
 
+#
+# VERSION FUNCTION
+#
+def version(options=[], stream=command_streams):
+	"""Syntax: openfido [OPTIONS] version
+
+	The `version` function reports the current OpenFIDO version information.
+	"""
+	stream["output"](f"{__version__} {branch}")
