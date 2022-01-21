@@ -6,13 +6,6 @@ To install the OpenFIDO CLI, enter the following command at the command prompt:
 curl -sL https://raw.githubusercontent.com/openfido/cli/main/install.sh | bash
 ~~~
 
-If you wish to install from an alternate branch, e.g., `develop`, use the command:
-
-~~~
-export OPENFIDO_BRANCH=develop
-curl -sL https://raw.githubusercontent.com/openfido/cli/${OPENFIDO_BRANCH}/install.sh | bash
-~~~
-
 # Quick Start
 
 The command `openfido` supports the following subcommands:
