@@ -20,7 +20,7 @@ Authentication methods:
 		<your-token>
 """
 
-__version__ = "0.0.1"
+__version__ = "0.0.2"
 
 import os, sys, glob, pydoc, warnings, subprocess, signal
 import requests, shutil, importlib, pandas, docker
