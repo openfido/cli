@@ -19,16 +19,17 @@ curl -sL https://raw.githubusercontent.com/${OPENFIDO_PROJECT}/${OPENFIDO_BRANCH
 The command `openfido` supports the following subcommands:
 
 * `openfido [OPTIONS] config [show|get VARIABLE|set VARIABLE VALUE]`
-* `openfido [OPTIONS] help [FUNCTION]`
+* `openfido [OPTIONS] help [PRODUCT]`
 * `openfido [OPTIONS] index [PATTERN]`
-* `openfido [OPTIONS] info FUNCTION`
-* `openfido [OPTIONS] install FUNCTION ...`
-* `openfido [OPTIONS] remove FUNCTION ...`
-* `openfido [OPTIONS] run FUNCTION [OPTIONS] inputlist outputlist`
-* `openfido [OPTIONS] update FUNCTION ...`
+* `openfido [OPTIONS] info PRODUCT`
+* `openfido [OPTIONS] install PRODUCT ...`
+* `openfido [OPTIONS] remove PRODUCT ...`
+* `openfido [OPTIONS] run PRODUCT [OPTIONS] inputlist outputlist`
+* `openfido [OPTIONS] update PRODUCT ...`
 * `openfido [OPTIONS] server [--imagename IMAGENAME[:TAG]] [start|stop|restart|status|update|open]`
 * `openfido [OPTIONS] pipeline [create|start|delete|list] [ARGUMENTS]`
 * `openfido [OPTIONS] workflow [create|start|delete|list] [ARGUMENTS]`
+* `openfido [OPTIONS] validate PRODUCT`
 
 ## Options
 
