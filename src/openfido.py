@@ -633,5 +633,10 @@ def validate(options=[], stream=command_streams):
 	name = options[0]
 	path = f"{cache}/{name}"
 	os.chdir(path)
-	result = subprocess.run("sh validate.sh".split())
+	if quiet:
+		result = subprocess.run("sh validate.sh -q".split())
+	elif verbose:
+		result = subprocess.run("sh validate.sh -v".split())
+	else:
+		result = subprocess.run("sh validate.sh".split())			
 	exit(result.returncode)
