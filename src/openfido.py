@@ -74,7 +74,7 @@ command_streams = {"output":print, "warning":warnings.warn, "error":error, "verb
 #
 # FUNCTION VALIDATE
 #
-callable_functions = ["config","help","index","info","install","show","update","run","server","pipeline","workflow","validate"]
+callable_functions = ["config","help","index","info","install","show","update","run","server","pipeline","workflow","validate","version"]
 def is_valid(function):
 	return function in callable_functions
 
@@ -306,7 +306,7 @@ def install(options=[], stream=default_streams):
 				manifest = None
 			if not manifest:
 				stream["error"](f"manifest read failed: url={url}, status_code={data.status_code}, headers={data.headers}, body=[{data.text}]") 
-			if not "application" in manifest.keys() or manifest["application"] != "openfido":
+			elif not "application" in manifest.keys() or manifest["application"] != "openfido":
 				stream["error"](f"tool '{name}' is not an openfido application")
 				failed.append(name)
 			elif not "valid" in manifest.keys() or not manifest["valid"]:
@@ -640,3 +640,14 @@ def validate(options=[], stream=command_streams):
 	else:
 		result = subprocess.run("sh validate.sh".split())			
 	exit(result.returncode)
+
+#
+# VERSION FUNCTION
+#
+def version(options=[], stream=command_streams):
+	"""Syntax: openfido [OPTIONS] version
+
+	The `version` function reports the current OpenFIDO version information.
+	"""
+	stream["output"](f"{__version__} {branch}")
+
