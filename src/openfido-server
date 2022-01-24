@@ -99,6 +99,16 @@ function stop ()
 	fi
 }
 
+function backup()
+{
+	error 1 "backup not implemented yet"
+}
+
+function restore()
+{
+	error 1 "restore not implemented yet"
+}
+
 function _open()
 {
 	echo "Connecting your browser to http://$HOSTNAME:$PORTNUM/"
@@ -121,6 +131,12 @@ elif [ "$1" == "restart" ]; then
 	start
 elif [ "$1" == "open" ]; then
 	_open
+elif [ "$1" == "backup" ]; then
+	shift 1
+	backup $1
+elif [ "$1" == "restore" ]; then
+	shift 1
+	restore $1
 elif [ "$1" == "status" ]; then
 	STATUS=$(status)
 	case ${STATUS:-UNKNOWN} in
@@ -132,6 +148,6 @@ elif [ "$1" == "status" ]; then
 	*) echo "Openfido server reply code $STATUS";;
 	esac
 else
-	echo "ERROR: '$1' is not a valid command"
+	error 1 "'$1' is not a valid command"
 fi
 
