@@ -423,7 +423,7 @@ def remove(options=[], stream=default_streams):
 # RUN FUNCTION
 #
 def run(options=[], stream=command_streams):
-	"""Syntax: openfido [OPTIONS] run PRODUCT [OPTIONS ...] INPUTFILES [OUTPUTFILES]
+	"""Syntax: openfido [OPTIONS] run PRODUCT [-FLAG ...] [NAME=VALUE ...] [INPUT,...] [OUTPUT,...] 
 
 	The `run` function runs an openfido product on the local system.
 	"""
