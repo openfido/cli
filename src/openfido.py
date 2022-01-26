@@ -468,12 +468,17 @@ def server(options=[], stream=command_streams):
 
 	The `server` function controls the local openfido server running on docker.
 	"""
+	print("options: ", options[0], options[1])
 	if len(options) == 0:
 		raise Exception("missing server command")
-	elif len(options) > 1:
-		raise Exception("too many server commands")
-	else:
+	elif len(options) == 1:
 		subprocess.run(["/usr/local/bin/openfido-server",options[0]])
+	elif len(options) == 2:
+		subprocess.run(["/usr/local/bin/openfido-server",options[0],options[1]])
+	else:
+		raise Exception("too many server commands")
+
+		
 
 #
 # PIPELINE FUNCTION
