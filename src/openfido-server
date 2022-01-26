@@ -108,9 +108,13 @@ function backup()
 	currentTime=$(date '+%Y%m%d-%H%M%S')
 	echo "commit docker image:openfido-$currentTime:backup"
 	docker commit openfido-server-1 openfido-$currentTime:backup | pv 
-	# save image to tar
+	# save image to .gzip
 	echo "save docker image:openfido-$currentTime:backup to  openfido-backup-latest.tar"
-	docker save openfido-$currentTime:backup | pv -s $(docker image inspect openfido-$currentTime:backup --format='{{.Size}}') | gzip > openfido-backup-latest.tar
+	if [ ! -d backup ]; then 
+		mkdir backup
+		chmod +rw backup
+	fi
+	docker save openfido-$currentTime:backup | pv -s $(docker image inspect openfido-$currentTime:backup --format='{{.Size}}') | gzip > ./backup/openfido-backup-latest.gzip
 	# remove commit image
 	docker rmi openfido-$currentTime:backup 
 
@@ -118,42 +122,24 @@ function backup()
 
 function restore()
 {	
+	PID=$(docker container ls -q -f name=openfido-server-1)
+	if [ ! -z "$PID" ]; then
+		# if server is active 
+		error 1 "openfido-server-1 is activated, please stop server and re-run restore command!! "
+	fi
 	# check if backup image exist 
-	if [ ! -f openfido-backup-latest.tar ]; then 
+	if [ ! -f ./backup/openfido-backup-latest.gzip ]; then 
 		error 1 "openfido-backup-latest.tar: no such file "
 	fi
 	# load image
-	echo "load back up docker image: openfido-backup-latest.tar "
-	response=$(pv openfido-backup-latest.tar | docker load)
-	imagename=${response##*Loaded image: }
-	echo "load back up to docker-image:$imagename"
-	# stop current image 
-	echo "stop current image "
-	echo "run back image:$imagename"
+	echo "load back up docker image: openfido-backup-latest.gzip "
+	response=$(pv ./backup/openfido-backup-latest.gzip | docker load)
+	IMAGENAME=${response##*Loaded image: } # get the string after "Loaded image: "
+	echo "load back up to docker-image:$IMAGENAME"
+	# check current image 
 
-	echo "****************************************************************************************************"
-	echo "OPTIONS: $OPTIONS, HOSTNAME: $HOSTNAME, PORTNUM:$ $PORTNUM, IMAGENAME:$imagename,  LOGFILE:$LOGFILE"
-	echo "****************************************************************************************************"
-	if [ "$(status)" == "STOPPED" ]; then
-		echo -n "Starting openfido server"
-		docker rm openfido-server-1 1>/dev/null 2>/dev/null || true
-		docker run --name openfido-server-1 $OPTIONS -v /tmp:/tmp -v /var/run/docker.sock:/var/run/docker.sock -p $HOSTNAME:5001:5001 -p $HOSTNAME:5002:5002 -p $HOSTNAME:5003:5003 -p $HOSTNAME:9000:9000 -p $HOSTNAME:3000:$PORTNUM ${imagename} 1>>$LOGFILE 2>&1 &
-		while [ "$(status)" == "STOPPED" ]; do
-			sleep 1
-		done
-		while [ "$(status)" == "NOREPLY" ]; do
-			echo -n "."
-			sleep 1
-		done
-		if [ "$(status)" != "OK" ]; then
-			echo "startup failed (status=$(status)), killing server"
-			PID=$(docker container ls -q -f name=openfido-server-1)
-			docker container kill $PID > /dev/null
-		fi
-		echo "ok"
-	else
-		error 1 "unabled to start, server status is $(status)"
-	fi
+	echo "run backup image:$IMAGENAME"
+	start
 }
 
 function stop ()
