@@ -62,11 +62,6 @@ If the options are not provided, the default value of the options are:
 * If an image name `BACKUPIMAGENAME:[TAG]`.tar is provided, then the named image is restored. The image should be located under `./backup` folder.
 * If a server is active, then the restore command will fail, unless the `--force` option is provided.
 
-### Commit
-
-* Commit a current image by `docker commit openfido-server-1 [IMAGENAME[:TAG]] | pv` command.
-* If server is not active, run commit image by `openfido server [--imagename IMAGENAME[:TAG]] start` command
-
 # Developers
 
 See the `dev` folder for details on developer tools.
