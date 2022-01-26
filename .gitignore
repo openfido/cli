@@ -131,5 +131,5 @@ src/openfido.err
 .DS_Store
 .pipelines.csv
 
-# docker images back file
-*.tar
+# docker images backup file
+backup/
