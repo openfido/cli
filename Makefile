@@ -46,7 +46,7 @@ install.sh: $(foreach TARGET,$(TARGETS),$(SRCDIR)/$(TARGET))
 	
 install: $(foreach TARGET,$(TARGETS),$(PREFIX)/$(TARGET))
 	@echo make: openfido installed in $(PREFIX)
-
+	@bash ./install.sh
 uninstall:
 	@rm -f $(foreach TARGET,$(TARGETS),$(PREFIX)/$(TARGET))
 	@test -f $(SRCDIR)/uninstall.txt && rm $(cat $(SRCDIR)/uninstall.txt)
