@@ -12,4 +12,5 @@ yum install epel-release -y
 yum install pv -y
 yum -q install python3 -y
 python3 -m pip install --upgrade pip
-python3 -m pip install pandas requests docker 
+python3 -m pip install ../requirements.txt
+# python3 -m pip install pandas requests docker 
