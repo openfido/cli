@@ -5,7 +5,7 @@ echo "ubuntu:20.04 install dependencies"
 apt-get -q update
 apt-get install cmake -y
 apt-get install libxml2-dev -y
-apt-get install -y libarchive-dev
+apt-get install libarchive-dev -y
 ln -fs /usr/share/zoneinfo/UTC/GMT /etc/localtime
 export DEBIAN_FRONTEND=noninteractive
 apt-get install -y tzdata
