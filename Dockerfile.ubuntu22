@@ -1,5 +1,6 @@
 FROM ubuntu:22.04
 RUN apt-get update -y
+RUN apt-get install cmake -y
 # RUN yum install git -y
 # RUN yum -q groupinstall "Development Tools" -y
 # RUN yum install cmake -y
