@@ -36,7 +36,7 @@ echo "install requirements"
 /usr/local/bin/python3 -m pip install -r requirements.txt
 
 
-echo "check docekr "
+echo "check docekr !!"
 if [[ $(which docker) && $(docker --version) ]]; then
     echo "docker is installed "
 else
