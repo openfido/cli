@@ -5,7 +5,7 @@ To install the OpenFIDO CLI, enter the following command at the command prompt:
 1). Install enviromental dependencies.
 
 ~~~
-./install_env.sh [-v|--info|-h|-f|--no-setup]
+sudo ./install_env.sh [-v|--info|-h|-f|--no-setup]
 ~~~
 
 #### Options
@@ -24,7 +24,7 @@ To install the OpenFIDO CLI, enter the following command at the command prompt:
 * Debian: 11
 * CentOS: 8
 * Amazon EC2
-  * In Amazon EC2, Please run `export PATH=/usr/local/bin:$PATH` first to setup the PATH.
+  * In Amazon EC2, Please run `sudo export PATH=/usr/local/bin:$PATH` first to setup the PATH.
 
 2). make install.
 
