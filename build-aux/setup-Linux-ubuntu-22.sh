@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Install needed system tools
-echo "ubuntu:20.04 install dependencies"
+echo "ubuntu:22.04 install dependencies"
 
 apt update
 apt-get -q update -y

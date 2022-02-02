@@ -21,7 +21,7 @@ if [ ! -d "$VAR" ]; then
 fi
 
 # setup logging
-echo "VAR=$VAR"
+
 
 LOG="$VAR/install.log"
 function log()
