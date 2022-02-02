@@ -2,7 +2,9 @@
 
 To install the OpenFIDO CLI, enter the following command at the command prompt:
 
-1). Install enviromental dependencies.
+1). This repository runs under `docker` container. Please make sure you have `docker` installed and have `docker server` run. For docker installation, please check `https://docs.docker.com/get-docker/` for detail.
+
+2). Install enviromental dependencies.
 
 ~~~
 sudo ./install_env.sh [-v|--info|-h|-f|--no-setup]
@@ -26,7 +28,7 @@ sudo ./install_env.sh [-v|--info|-h|-f|--no-setup]
 * Amazon EC2
   * In Amazon EC2, Please run `sudo export PATH=/usr/local/bin:$PATH` first to setup the PATH.
 
-2). make install.
+3). make install.
 
 ~~~
 make install
