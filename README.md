@@ -2,8 +2,34 @@
 
 To install the OpenFIDO CLI, enter the following command at the command prompt:
 
+1). Install enviromental dependencies.
+
 ~~~
-curl -sL https://raw.githubusercontent.com/openfido/cli/main/install.sh | bash
+./install_env.sh [-v|--info|-h|-f|--no-setup]
+~~~
+
+#### Options
+
+* `-h|--help            Print this helpful output`
+* `--info               Print information about this install`
+* `-v|--verbose         Run showing log output`
+* `-s|--silent          Run without showing commands`
+* `-f|--force           Force install into existing target folder`
+* `--no-setup           Perform system setup`
+
+#### support OS
+
+* Mac OSX: Monterey
+* Ubuntu: 22.04
+* Debian: 11
+* CentOS: 8
+* Amazon EC2
+  * In Amazon EC2, Please run `export PATH=/usr/local/bin:$PATH` first to setup the PATH.
+
+2). make install.
+
+~~~
+make install
 ~~~
 
 If you wish to install from an alternate repo or branch, e.g., `develop`, use the command:
