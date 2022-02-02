@@ -5,10 +5,10 @@ LOGFILE="/var/log/openfido.log"
 touch $LOGFILE 1>/dev/null 2>&1|| LOGFILE="openfido.log"
 
 HOSTNAME="127.0.0.1"
-IMAGENAME="openfido/openfido:latest"
-
+IMAGENAME=${IMAGENAME:-openfido/openfido:latest}
+BACKUPIMAGENAME=${BACKUPIMAGENAME:-openfido-backup-latest}
+FORCERESTORE=${FORCERESTORE:-false}
 PORTNUM="3000"
-
 OPTIONS=""
 
 if [ -f "$0.conf" ]; then
@@ -64,6 +64,14 @@ function status ()
 
 function start ()
 {
+	echo "*********************"
+	echo "OPTIONS: $OPTIONS, "
+	echo "HOSTNAME: $HOSTNAME," 
+	echo "PORTNUM:$ $PORTNUM," 
+	echo "IMAGENAME:$IMAGENAME,"  
+	echo "LOGFILE:$LOGFILE"
+	echo "*********************"
+
 	if [ "$(status)" == "STOPPED" ]; then
 		echo -n "Starting openfido server"
 		docker rm openfido-server-1 1>/dev/null 2>/dev/null || true
@@ -101,12 +109,72 @@ function stop ()
 
 function backup()
 {
-	error 1 "backup not implemented yet"
+	# check previous commited image exits
+	if [ ! -z "$(docker images -q  openfido-backup-"*")" ]; then 
+		# remove previous commit image
+		echo "remove previous commited image"
+		for image_id in $(docker images -q  openfido-backup-"*")
+		do
+			docker rmi $image_id
+		done
+		
+	fi
+
+	# commit current image
+	currentTime=$(date '+%Y%m%d-%H%M%S')
+	echo "commit docker image:openfido-backup-$currentTime:backup"
+	docker commit openfido-server-1 openfido-backup-$currentTime:backup | pv 
+	# # save image to .tar
+	echo "save docker image:openfido-backup-$currentTime:backup to $BACKUPIMAGENAME.tar"
+	if [ ! -d backup ]; then 
+		mkdir backup
+		chmod +rw backup
+	fi
+	docker save openfido-backup-$currentTime:backup | pv -s $(docker image inspect openfido-backup-$currentTime:backup --format='{{.Size}}') > ./backup/$BACKUPIMAGENAME.tar
+
 }
 
 function restore()
+{	
+	# check if backup image exist 
+	if [ ! -f ./backup/$BACKUPIMAGENAME.tar ]; then 
+		error 1 "$BACKUPIMAGENAME.tar: no such file "
+	fi
+	# check if server not active and --force is not true 
+	PID=$(docker container ls -q -f name=openfido-server-1)
+	if [ ! -z "$PID" ]; then
+		# if server is active 
+		if [ $FORCERESTORE == "true" ]; then 
+			# stop server
+			echo "force to stop server"
+			stop
+		else
+			error 1 "openfido-server-1 is activated, please stop server or use [--force] options to force restore!!!"
+		fi
+	fi
+
+	# load image
+	echo "load back up docker image: $BACKUPIMAGENAME.tar "
+	response=$(pv ./backup/$BACKUPIMAGENAME.tar | docker load)
+	IMAGENAME=${response##*Loaded image: } # get the string after "Loaded image: "
+
+	echo "load back up to docker-image:$BACKUPIMAGENAME"
+	echo "run backup image:$BACKUPIMAGENAME"
+	start
+}
+
+function stop ()
 {
-	error 1 "restore not implemented yet"
+	PID=$(docker container ls -q -f name=openfido-server-1)
+	if [ -z "$PID" ]; then
+		warning "no server active"
+	else
+		echo -n "Stopping openfido server..."
+		docker container kill $PID > /dev/null
+		docker container rm $PID > /dev/null
+		echo "ok"
+	fi
+
 }
 
 function _open()
@@ -116,10 +184,23 @@ function _open()
 	open http://$HOSTNAME:$PORTNUM/	
 }
 
+
+
 if [ "$1" == "--imagename" ]; then
 	IMAGENAME=$2
+	# check if docker image is not default name:openfido/openfido:latest , then check if docker image exists locally. 
+	if [ $IMAGENAME != "openfido/openfido:latest" ]; then 
+		[ -n "$(docker images -q $IMAGENAME)" ] || error 1 "docker image:$IMAGENAME does not exist"
+	fi
 	shift 2
 fi
+
+if [ "$1" == "--backupname" ]; then
+	BACKUPIMAGENAME=$2
+	echo "BACKUPIMAGENAME=$BACKUPIMAGENAME"
+	shift 2
+fi
+
 if [ "$1" == "update" ]; then
 	update
 elif [ "$1" == "start" ]; then
@@ -132,11 +213,14 @@ elif [ "$1" == "restart" ]; then
 elif [ "$1" == "open" ]; then
 	_open
 elif [ "$1" == "backup" ]; then
+	backup
 	shift 1
-	backup $1
 elif [ "$1" == "restore" ]; then
-	shift 1
-	restore $1
+	if [ "$2" == "--force" ]; then 
+		FORCERESTORE="true"
+	fi
+	restore 
+	shift 2
 elif [ "$1" == "status" ]; then
 	STATUS=$(status)
 	case ${STATUS:-UNKNOWN} in
