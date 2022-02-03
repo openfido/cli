@@ -16,7 +16,7 @@ yum groupinstall "Development Tools" -y
 yum install openssl-devel libffi-devel bzip2-devel -y
 
 # python3 support needed as of 4.2
-if [ ! -x /usr/local/bin/python3 -o "$(/usr/local/bin/python3 --version)" != "Python 3.9.6" ]; then
+if [ ! -x /usr/local/bin/python3 -o "$(/usr/local/bin/python3 --version | cut -f2 -d.)" != "Python 3.9" ]; then
 	echo "install python 3.9.6"	
 	
 	cd /usr/local/src
@@ -31,5 +31,9 @@ if [ ! -x /usr/local/bin/python3 -o "$(/usr/local/bin/python3 --version)" != "Py
 fi
 echo "install python packages"
 /usr/local/bin/python3 -m pip install --upgrade pip
-/usr/local/bin/python3 -m pip install --no-cache-dir -r requirements.txt
+# /usr/local/bin/python3 -m pip install -r requirements.txt
+/usr/local/bin/python3 -m pip install docker
+/usr/local/bin/python3 -m pip install pandas 
+/usr/local/bin/python3 -m pip install pygit2
+
 
