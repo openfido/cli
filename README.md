@@ -90,11 +90,11 @@ If the options are not provided, the default value of the options are:
 
 * The `opentifo server backup` command will commit an image based on the current state of the container (default container name is `openfido-server-1`).
 * The most recently saved image is named is `openfido-backup-latest` under `./backup` folder.
-* Once the tar file is saved, any older images is removed.
+* Once the tar file is saved, any older images are removed.
 
 #### Restore
 
-* To restore the commited image under docker images list. Please stop the current server first and use `opentifo server --imagename [IMAGENAME[:TAG]] start` command.
+* To restore the saved image under docker images list. Please stop the current server first and use `opentifo server --imagename [IMAGENAME[:TAG]] start` command.
 * To load and restore image from .tar file. Please use `opentifo server restore` command to load and restore the most recently saved image from `openfido-backup-latest.tar` under `./backup` folder.
 * If an image name `BACKUPIMAGENAME:[TAG]`.tar is provided, then the named image is restored. The image should be located under `./backup` folder.
 * If a server is active, then the restore command will fail, unless the `--force` option is provided.
