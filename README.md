@@ -7,6 +7,7 @@ To install the OpenFIDO CLI, enter the following command at the command prompt:
 ### Setup environment
 
 If `cmake` had been installed in your system, run:
+
 ~~~
 make setup
 ~~~
@@ -38,7 +39,7 @@ sudo ./setup.sh [-v|--info|-h|-f]
 
 This program needs to run inside the `docker`. Please make sure you have `docker server` installed and run in your system. For docker installation, please check `https://docs.docker.com/get-docker/` for detail.
 
-Install the `opnenfido cli` from the respository by command:
+Install the `opnenfido cli` , run command.
 
 ~~~
 make install
