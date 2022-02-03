@@ -4,53 +4,8 @@
 
 To install the OpenFIDO CLI, enter the following command at the command prompt:
 
-### Setup environment
-
-If `cmake` had been installed in your system, run:
-
 ~~~
-make setup
-~~~
-
-or you can use shell command with options:
-
-~~~
-sudo ./setup.sh [-v|--info|-h|-f]
-~~~
-
-#### Setup options
-
-* `-h|--help            Print this helpful output`
-* `--info               Print information about this install`
-* `-v|--verbose         Run showing log output`
-* `-s|--silent          Run without showing commands`
-* `-f|--force           Force install into existing target folder`
-
-#### support platfrom
-
-* Mac OSX: Monterey
-* Ubuntu: 22.04
-* Debian: 11
-* CentOS: 8
-* Amazon EC2
-  * In Amazon EC2, Please run `sudo export PATH=/usr/local/bin:$PATH` first before run `make setup` command.
-
-### Install CLI
-
-This program needs to run inside the `docker`. Please make sure you have `docker server` installed and run in your system. For docker installation, please check `https://docs.docker.com/get-docker/` for detail.
-
-Install the `opnenfido cli` , run command:
-
-~~~
-make install
-~~~
-
-If you wish to install from an alternate repo or branch, e.g., `develop`, use the command:
-
-~~~
-export OPENFIDO_PROJECT=openfido/cli
-export OPENFIDO_BRANCH=develop
-curl -sL https://raw.githubusercontent.com/${OPENFIDO_PROJECT}/${OPENFIDO_BRANCH}/install.sh | bash
+curl -sL https://raw.githubusercontent.com/openfido/cli/main/install.sh | bash
 ~~~
 
 ## Quick Start
