@@ -63,7 +63,7 @@ $(PREFIX)/%: $(SRCDIR)/%
 
 # development setup
 setup-dev:
-	@bash ./setup.sh -v -f
+	@bash ./setup.sh -v 
 	@/usr/local/bin/python3 setup.py develop --record $(SRCDIR)/uninstall.txt
 
 # build for release
