@@ -1,6 +1,7 @@
 FROM debian:11
 RUN apt-get update -y
 RUN apt-get install procps -y
+RUN apt-get install cmake -y
 
 WORKDIR /usr/src/local/cli
 COPY . .
