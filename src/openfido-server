@@ -29,6 +29,13 @@ function warning()
 {
 	echo "WARNING [openfido-server]: $*"
 }
+
+# check for commands that absolutely necessary to proceed
+function require()
+{
+	$1 ${2:---version} > /dev/null 2>&1 || error 1 "$1 is required"
+}
+
 function update ()
 {
 	echo -n "Checking for updates..."
@@ -110,6 +117,7 @@ function stop ()
 function backup()
 {
 	# checkk if openfido/openfido image is activate. 
+	require pv
 	PID=$(docker container ls -q -f name=openfido-server-1)
 	if [ -z "$PID" ]; then
 		error 1 "no server active, please activate server then run the backup command"
@@ -146,6 +154,7 @@ function backup()
 
 function restore()
 {	
+	require pv
 	# check if backup image exist 
 	if [ ! -f ./backup/$BACKUPIMAGENAME.tar ]; then 
 		error 1 "$BACKUPIMAGENAME.tar: no such file "
