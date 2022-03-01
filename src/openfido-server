@@ -29,6 +29,13 @@ function warning()
 {
 	echo "WARNING [openfido-server]: $*"
 }
+
+# check for commands that absolutely necessary to proceed
+function require()
+{
+	$1 ${2:---version} > /dev/null 2>&1 || error 1 "$1 is required"
+}
+
 function update ()
 {
 	echo -n "Checking for updates..."
@@ -109,33 +116,45 @@ function stop ()
 
 function backup()
 {
-	# check previous commited image exits
-	if [ ! -z "$(docker images -q  openfido-backup-"*")" ]; then 
-		# remove previous commit image
-		echo "remove previous commited image"
-		for image_id in $(docker images -q  openfido-backup-"*")
-		do
-			docker rmi $image_id
-		done
-		
+	# checkk if openfido/openfido image is activate. 
+	require pv
+	PID=$(docker container ls -q -f name=openfido-server-1)
+	if [ -z "$PID" ]; then
+		error 1 "no server active, please activate server then run the backup command"
 	fi
 
-	# commit current image
 	currentTime=$(date '+%Y%m%d-%H%M%S')
-	echo "commit docker image:openfido-backup-$currentTime:backup"
-	docker commit openfido-server-1 openfido-backup-$currentTime:backup | pv 
+	docker save openfido/openfido:latest | pv -s $(docker image inspect openfido/openfido:latest --format='{{.Size}}') > ./backup/$BACKUPIMAGENAME.tar
+	# commit current image -> 
+	# ****************************************************************************************************
+	# To do the commit feature require to export .env file first to save credentials. 
+	# To get original credentials in loading image, please import the .env file run openfido server --imagename [NAME] start
+	# ****************************************************************************************************
+	# check previous commited image exits
+	# if [ ! -z "$(docker images -q  openfido-backup-"*")" ]; then 
+	# 	# remove previous commit image
+	# 	echo "remove previous commited image"
+	# 	for image_id in $(docker images -q  openfido-backup-"*")
+	# 	do
+	# 		docker rmi $image_id
+	# 	done
+		
+	# fi
+	# echo "commit docker image:openfido-backup-$currentTime:backup"
+	# docker commit openfido-server-1 openfido-backup-$currentTime:backup | pv 
 	# # save image to .tar
-	echo "save docker image:openfido-backup-$currentTime:backup to $BACKUPIMAGENAME.tar"
-	if [ ! -d backup ]; then 
-		mkdir backup
-		chmod +rw backup
-	fi
-	docker save openfido-backup-$currentTime:backup | pv -s $(docker image inspect openfido-backup-$currentTime:backup --format='{{.Size}}') > ./backup/$BACKUPIMAGENAME.tar
+	# echo "save docker image:openfido-backup-$currentTime:backup to $BACKUPIMAGENAME.tar"
+	# if [ ! -d backup ]; then 
+	# 	mkdir backup
+	# 	chmod +rw backup
+	# fi
+	# docker save openfido-backup-$currentTime:backup | pv -s $(docker image inspect openfido-backup-$currentTime:backup --format='{{.Size}}') > ./backup/$BACKUPIMAGENAME.tar
 
 }
 
 function restore()
 {	
+	require pv
 	# check if backup image exist 
 	if [ ! -f ./backup/$BACKUPIMAGENAME.tar ]; then 
 		error 1 "$BACKUPIMAGENAME.tar: no such file "
