@@ -29,10 +29,11 @@ GITHUB=https://raw.githubusercontent.com/openfido/cli/main/$(SRCDIR)
 
 help:
 	@echo "OpenFIDO makefile targets:"
+	@echo "  setup        install environmental dependencies of openfiod  
 	@echo "  install      install to $(PREFIX)"
 	@echo "  install.sh   update install script for $(GITHUB)"
 	@echo "  uninstall    uninstall from $(PREFIX)"
-	@echo "  setup        setup local development environment"
+	@echo "  setup-dev    setup local development environment"
 	@echo "  build        build python module"
 	@echo "  testpypi     test release python module"
 	@echo "  pypi         release python module"
@@ -40,6 +41,10 @@ help:
 	@echo "To release openfido, you must set the server API tokens using keyring, e.g.,"
 	@echo "  $ python3 -m keyring set https://pypi.org/openfido openfido"
 	@echo "  $ python3 -m keyring set https://testpypi.org/openfido openfido"
+
+setup:
+	@echo setup environment
+	@bash ./setup.sh -v -f
 
 install.sh: $(foreach TARGET,$(TARGETS),$(SRCDIR)/$(TARGET))
 	@(for TARGET in $(TARGETS); do echo "curl -sL $(GITHUB)/$$TARGET > $(PREFIX)/$$TARGET ; chmod +x $(PREFIX)/$$TARGET"; done) > install.sh
@@ -57,7 +62,8 @@ $(PREFIX)/%: $(SRCDIR)/%
 	@chmod +x $@
 
 # development setup
-setup:
+setup-dev:
+	@bash ./setup.sh -v 
 	@/usr/local/bin/python3 setup.py develop --record $(SRCDIR)/uninstall.txt
 
 # build for release

@@ -1,0 +1,27 @@
+#
+# Enable the system setup operations to ensure the required build tools are installed.  
+# Installation setup is only needed once on any given system and updates are only 
+# needed periodically.  By default the setup operations are performed only once.  Setup 
+# checks can be disabled using the "--no-setup" option. 
+#
+SETUP="yes"
+
+#
+# Force build in spite of issues like running as root and installing into a non-empty folder.
+# By default running as root or installing into a non-empty folder can lead to issues later.
+# Forced installs are enabled using the "--force" option.
+#
+FORCE="no"
+
+#
+# Enable output of install log output. By default the output is logged in the 
+# 'install.log'. This option can be enabled using the "--verbose" option.
+#
+VERBOSE="no"
+
+#
+# Enable very silent operation, meaning only errors are reported. By default each
+# command issued is displayed when it is run. This option is enabled using the
+# "--silent" option.
+#
+SILENT="no"

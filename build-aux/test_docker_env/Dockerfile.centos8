@@ -1,0 +1,10 @@
+FROM centos:latest
+
+RUN sed -i 's/mirrorlist/#mirrorlist/g' /etc/yum.repos.d/CentOS-Linux-*
+RUN sed -i 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' /etc/yum.repos.d/CentOS-Linux-*
+
+RUN yum install -y glibc-langpack-en
+RUN yum update -y
+
+WORKDIR /usr/src/local/cli
+COPY . .
