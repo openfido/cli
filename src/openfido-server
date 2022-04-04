@@ -5,7 +5,7 @@ LOGFILE="/var/log/openfido.log"
 touch $LOGFILE 1>/dev/null 2>&1|| LOGFILE="openfido.log"
 
 HOSTNAME="127.0.0.1"
-IMAGENAME=${IMAGENAME:-openfido/openfido:latest}
+IMAGENAME=${IMAGENAME:-openfido/cli:latest}
 BACKUPIMAGENAME=${BACKUPIMAGENAME:-openfido-backup-latest}
 FORCERESTORE=${FORCERESTORE:-false}
 PORTNUM="3000"
@@ -116,7 +116,7 @@ function stop ()
 
 function backup()
 {
-	# checkk if openfido/openfido image is activate. 
+	# checkk if openfido/cli image is activate. 
 	require pv
 	PID=$(docker container ls -q -f name=openfido-server-1)
 	if [ -z "$PID" ]; then
@@ -124,7 +124,7 @@ function backup()
 	fi
 
 	currentTime=$(date '+%Y%m%d-%H%M%S')
-	docker save openfido/openfido:latest | pv -s $(docker image inspect openfido/openfido:latest --format='{{.Size}}') > ./backup/$BACKUPIMAGENAME.tar
+	docker save openfido/cli:latest | pv -s $(docker image inspect openfido/cli:latest --format='{{.Size}}') > ./backup/$BACKUPIMAGENAME.tar
 	# commit current image -> 
 	# ****************************************************************************************************
 	# To do the commit feature require to export .env file first to save credentials. 
@@ -207,8 +207,8 @@ function _open()
 
 if [ "$1" == "--imagename" ]; then
 	IMAGENAME=$2
-	# check if docker image is not default name:openfido/openfido:latest , then check if docker image exists locally. 
-	if [ $IMAGENAME != "openfido/openfido:latest" ]; then 
+	# check if docker image is not default name:openfido/cli:latest , then check if docker image exists locally. 
+	if [ $IMAGENAME != "openfido/cli:latest" ]; then 
 		[ -n "$(docker images -q $IMAGENAME)" ] || error 1 "docker image:$IMAGENAME does not exist"
 	fi
 	shift 2
