@@ -87,7 +87,7 @@ def config(options=[], stream=default_streams):
 	The `config` function manages the openfido configuration file.  There are three possible locations
 	for the file `openfido_config.py`, and they are used in the following order of precedence:
 		1. `./openfido_config.py`
-		2. `$HOME/.openfido/openfido_config.py`
+		2. `$HOME/.openfido/cli.py`
 		3. `/usr/local/share/openfido_config.py`
 	"""
 	if len(options) == 0:
