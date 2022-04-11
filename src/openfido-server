@@ -80,7 +80,7 @@ function start ()
 	echo "*********************"
 
 	if [ "$(status)" == "STOPPED" ]; then
-		echo -n "Starting openfido server"
+		echo -n "Starting openfido server (please wait)"
 		docker rm openfido-server-1 1>/dev/null 2>/dev/null || true
 		docker run --name openfido-server-1 $OPTIONS -v /tmp:/tmp -v /var/run/docker.sock:/var/run/docker.sock -p $HOSTNAME:5001:5001 -p $HOSTNAME:5002:5002 -p $HOSTNAME:5003:5003 -p $HOSTNAME:9000:9000 -p $HOSTNAME:3000:$PORTNUM ${IMAGENAME} 1>>$LOGFILE 2>&1 &
 		while [ "$(status)" == "STOPPED" ]; do
