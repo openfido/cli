@@ -5,11 +5,11 @@ LOGFILE="/var/log/openfido.log"
 touch $LOGFILE 1>/dev/null 2>&1|| LOGFILE="openfido.log"
 
 HOSTNAME="127.0.0.1"
-IMAGENAME=${IMAGENAME:-openfido/cli:latest}
-BACKUPIMAGENAME=${BACKUPIMAGENAME:-openfido-backup-latest}
-FORCERESTORE=${FORCERESTORE:-false}
+IMAGENAME=${IMAGENAME:-openfido/cli:latest} 
 PORTNUM="3000"
+COMMAND="$2"
 OPTIONS=""
+
 
 if [ -f "$0.conf" ]; then
 	. "$0.conf"
@@ -75,7 +75,8 @@ function start ()
 	echo "OPTIONS: $OPTIONS, "
 	echo "HOSTNAME: $HOSTNAME," 
 	echo "PORTNUM:$ $PORTNUM," 
-	echo "IMAGENAME:$IMAGENAME,"  
+	echo "IMAGENAME:$IMAGENAME,"
+	echo "COMMAND:$COMMAND,"  
 	echo "LOGFILE:$LOGFILE"
 	echo "*********************"
 
@@ -99,6 +100,7 @@ function start ()
 	else
 		error 1 "unabled to start, server status is $(status)"
 	fi
+
 }
 
 function stop ()
@@ -249,7 +251,12 @@ fi
 if [ "$1" == "update" ]; then
 	update
 elif [ "$1" == "start" ]; then
-	start
+	if [ "$2" == "-r" ]; then
+		start
+		restore
+	else
+		start
+	fi
 elif [ "$1" == "stop" ]; then
 	stop
 elif [ "$1" == "restart" ]; then

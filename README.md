@@ -30,9 +30,9 @@ The command `openfido` supports the following subcommands:
 * `openfido [OPTIONS] remove PRODUCT ...`
 * `openfido [OPTIONS] run PRODUCT [OPTIONS] inputlist outputlist`
 * `openfido [OPTIONS] update PRODUCT ...`
-* `openfido [OPTIONS] server [--imagename IMAGENAME[:TAG]] [start|stop|restart|status|update|open]`
-* `openfido [OPTIONS] server [--backupname BACKUPIMAGENAME] [backup]`
-* `openfido [OPTIONS] server [--backupname BACKUPIMAGENAME] [restore] [--force]`
+* `openfido [OPTIONS] server [start|stop|restart|status|update|open] [-r]`
+* `openfido [OPTIONS] server [backup]`
+* `openfido [OPTIONS] server [restore]`
 * `openfido [OPTIONS] pipeline [create|start|delete|list] [ARGUMENTS]`
 * `openfido [OPTIONS] workflow [create|start|delete|list] [ARGUMENTS]`
 * `openfido [OPTIONS] validate PRODUCT`
@@ -52,16 +52,16 @@ If the options are not provided, the default value of the options are:
 
 #### Backup
 
-* The `opentifo server backup` command will commit an image based on the current state of the container (default container name is `openfido-server-1`).
-* The most recently saved image is named is `openfido-backup-latest` under `./backup` folder.
-* Once the tar file is saved, any older images are removed.
+* The `openfido server backup` command will dump the contents of the database into a sql file in the ~/cli_restore_db folder.
+* Each dump file is date-time stamped on creation and the latest is always accessible via symlink with the dump_cli.sql file.
+* All prior database dumps remain accessible for the user, and can be manually targeted by updating the symlink.
 
 #### Restore
 
-* To restore the saved image under docker images list. Please stop the current server first and use `opentifo server --imagename [IMAGENAME[:TAG]] start` command.
-* To load and restore image from .tar file. Please use `opentifo server restore` command to load and restore the most recently saved image from `openfido-backup-latest.tar` under `./backup` folder.
-* If an image name `BACKUPIMAGENAME:[TAG]`.tar is provided, then the named image is restored. The image should be located under `./backup` folder.
-* If a server is active, then the restore command will fail, unless the `--force` option is provided.
+* The `openfido server restore` command can only work when no users are connected to the database. Therefore, it can generally only be run right after a fresh start.
+* The restore command replaces the contents of the database with the stored data in the dump file. Due to this, it also updates the restored database with the latest generated API keys.
+* In order to maximize efficiency and guarantee a successful restore, start your server using `openfido server start -r`
+* The `-r` command will automatically run the restore function immediately after the server has finished building. 
 
 ## Developers
 

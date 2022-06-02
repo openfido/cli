@@ -464,7 +464,7 @@ def run(options=[], stream=command_streams):
 # SERVER FUNCTION
 #
 def server(options=[], stream=command_streams):
-	"""Syntax: openfido [OPTIONS] server [--backupname TARFILE] [start|stop|restart|status|update|open|backup|restore]
+	"""Syntax: openfido [OPTIONS] server [start|stop|restart|status|update|open|backup|restore] [restore]
 
 	The `server` function controls the local openfido server running on docker.
 	"""
@@ -476,6 +476,8 @@ def server(options=[], stream=command_streams):
 		subprocess.run(["/usr/local/bin/openfido-server",options[0],options[1]])
 	elif len(options) == 3:
 		subprocess.run(["/usr/local/bin/openfido-server",options[0],options[1],options[2]])
+	elif len(options) == 4:
+		subprocess.run(["/usr/local/bin/openfido-server",options[0],options[1],options[2],options[3]])
 	else:
 		raise Exception("too many server commands")
 
