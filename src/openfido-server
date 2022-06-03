@@ -10,6 +10,45 @@ PORTNUM="3000"
 COMMAND="$2"
 OPTIONS=""
 
+OPENFIDO_START_RESTORE="false"
+CLEAR_FLAGS=0
+
+# insert magic here
+
+while getopts ":rd:" opt; do
+  case $opt in
+    d)
+      echo "-d set backup/restore directory to: $OPTARG" >&2
+	  [ -d "${OPTARG}" ] && echo "Directory found/exists" || { echo "Directory does not exist. Please input a valid directory."; exit 1; }
+	  	case $OPTARG in
+		  */)
+		  	  echo "Incorrect format. Please remove the trailing slash."
+				exit 1
+				;;
+		  *)
+		  	  echo "Valid format."  
+			  OPENFIDO_BACKUP_DIR=$OPTARG
+			  CLEAR_FLAGS=$(($CLEAR_FLAGS+2))
+			  ;;
+		esac
+      ;;
+    r)
+      echo "-r set restore to true" >&2
+	  OPENFIDO_START_RESTORE="true"
+	  CLEAR_FLAGS=$(($CLEAR_FLAGS+1))
+      ;;
+    \?)
+      echo "Invalid option: -$OPTARG" >&2
+      exit 1
+      ;;
+    :)
+      echo "Option -$OPTARG requires an argument." >&2
+      exit 1
+      ;;
+  esac
+done
+shift $CLEAR_FLAGS
+
 # add checks for provided directory to make sure it matches format
 
 if [ -f "$0.conf" ]; then
@@ -129,12 +168,13 @@ function backup()
 	# use the below command to see your container list. It should be the container running openfido/cli
 	# docker ps -a
 	# this script makes the directory if it doesn't exist, and removes commands affecting the postgres user role from the dump file
-	# ${OPENFIDO_BACKUP_DIR:-.}
+	# Backup directory defaults to ./cli_restore_db unless input provided.
 	container_id=$(docker container ls -q -f name=openfido)
-	DIR=~/cli_restore_db
+	DIR=${OPENFIDO_BACKUP_DIR:=~/cli_restore_db}
 	DTS=`date +%d-%m-%Y"_"%H_%M_%S`
 	if test ! -d "$DIR"; then
 		echo 'no restore directory found, creating directory'
+		echo 'If no execution directory was provided, directory will be created in ~/cli_restore_db'
 		cd ~
 		mkdir -p cli_restore_db
 		cd cli_restore_db
@@ -177,9 +217,10 @@ function restore()
 	if [ -z "$PID" ]; then
 		error 1 "no server active, please run the server then run the backup command"
 	fi
-# ${OPENFIDO_BACKUP_DIR:-.}
+	# sets variables. Backup directory defaults to ~/cli_restore_db unless input provided.
 	container_id=$(docker container ls -q -f name=openfido)
-	DIR=~/cli_restore_db
+	DIR=${OPENFIDO_BACKUP_DIR:=~/cli_restore_db}
+	echo "Restoring from directory: $DIR"
 	# check if a backup exists 
 	if test ! -e "$DIR/dump_cli.sql"; then 
 		error 1 "dump_cli.sql: the backup file does not exist "
@@ -269,7 +310,7 @@ fi
 if [ "$1" == "update" ]; then
 	update
 elif [ "$1" == "start" ]; then
-	if [ "$2" == "-r" ]; then
+	if [ "$OPENFIDO_START_RESTORE" == "true" ]; then
 		start
 		restore
 	else
