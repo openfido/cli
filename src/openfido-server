@@ -10,6 +10,7 @@ PORTNUM="3000"
 COMMAND="$2"
 OPTIONS=""
 
+# add checks for provided directory to make sure it matches format
 
 if [ -f "$0.conf" ]; then
 	. "$0.conf"
@@ -127,7 +128,8 @@ function backup()
 	# manually update the container id variable if you did not name the container
 	# use the below command to see your container list. It should be the container running openfido/cli
 	# docker ps -a
-	# this script makes the directory if it doesn't exist, and if it does, handles naming new and renaming old db dumps
+	# this script makes the directory if it doesn't exist, and removes commands affecting the postgres user role from the dump file
+	# ${OPENFIDO_BACKUP_DIR:-.}
 	container_id=$(docker container ls -q -f name=openfido)
 	DIR=~/cli_restore_db
 	DTS=`date +%d-%m-%Y"_"%H_%M_%S`
@@ -137,6 +139,9 @@ function backup()
 		mkdir -p cli_restore_db
 		cd cli_restore_db
 		docker exec -t $container_id pg_dumpall -c -U postgres > dump_cli_$DTS.sql
+		sed -i '' -e '/DROP[[:space:]]ROLE[[:space:]]postgres/d' dump_cli_$DTS.sql
+		sed -i '' -e '/CREATE[[:space:]]ROLE[[:space:]]postgres/d' dump_cli_$DTS.sql
+		sed -i '' -e '/ALTER[[:space:]]ROLE[[:space:]]postgres/d' dump_cli_$DTS.sql
 		ln -sf dump_cli_$DTS.sql dump_cli.sql
 		echo 'backup created.'
 	fi
@@ -146,12 +151,18 @@ function backup()
 		if test ! -e "$DIR/dump_cli.sql"; then
 			echo 'directory found, no backup detected. creating backup.'
 			docker exec -t $container_id pg_dumpall -c -U postgres > dump_cli_$DTS.sql
+			sed -i '' -e '/DROP[[:space:]]ROLE[[:space:]]postgres/d' dump_cli_$DTS.sql
+			sed -i '' -e '/CREATE[[:space:]]ROLE[[:space:]]postgres/d' dump_cli_$DTS.sql
+			sed -i '' -e '/ALTER[[:space:]]ROLE[[:space:]]postgres/d' dump_cli_$DTS.sql
 			ln -sf dump_cli_$DTS.sql dump_cli.sql
 			echo 'backup created.'
 		fi
 
 		if test -e "$DIR/dump_cli.sql"; then
 			docker exec -t $container_id pg_dumpall -c -U postgres > dump_cli_$DTS.sql
+			sed -i '' -e '/DROP[[:space:]]ROLE[[:space:]]postgres/d' dump_cli_$DTS.sql
+			sed -i '' -e '/CREATE[[:space:]]ROLE[[:space:]]postgres/d' dump_cli_$DTS.sql
+			sed -i '' -e '/ALTER[[:space:]]ROLE[[:space:]]postgres/d' dump_cli_$DTS.sql
 			ln -sf dump_cli_$DTS.sql dump_cli.sql
 			echo 'backup created.'
 		fi
@@ -166,7 +177,7 @@ function restore()
 	if [ -z "$PID" ]; then
 		error 1 "no server active, please run the server then run the backup command"
 	fi
-
+# ${OPENFIDO_BACKUP_DIR:-.}
 	container_id=$(docker container ls -q -f name=openfido)
 	DIR=~/cli_restore_db
 	# check if a backup exists 
@@ -174,7 +185,7 @@ function restore()
 		error 1 "dump_cli.sql: the backup file does not exist "
 	fi
 
-	# you will use the created backup file here to restore the db
+	# you will use a created backup file to restore the db
 	# this script needs to be run right after you finish starting a fresh instance of openfido/cli and before accessing it
 	# here you need -i and the database name. Unlike -t, which uses the container id on the left, 
 	# -i uses the name under the NAMES column on the right.
@@ -182,30 +193,37 @@ function restore()
 		echo 'backup located, beginning database restore.'
 		USER=postgres 
 		container_name=openfido-server-1
-		docker exec -i $container_name psql --username $USER < $DIR/dump_cli.sql 
+		docker exec -i $container_name psql -v ON_ERROR_STOP=1 --username "$USER" < $DIR/dump_cli.sql && status="pass" || status="fail"
+		echo $status
 
-		# allow variables to be passed in from the container
-		container_id=$(docker container ls -q -f name=openfido)
-		container_name=openfido-server-1
-		docker exec -i $container_name bash -c '
-			cd opt/app-keys ;
-			PIPE_CLIENT=`sed "'"s/ //g"'" pipelines-client` ; 
-			PIPE_CLIENT=`echo $PIPE_CLIENT | sed "'"s/exportWORKFLOW_API_TOKEN=//"'"` ; 
-			echo $PIPE_CLIENT ; 
-			PIPE_WORKER=`sed "'"s/ //g"'" worker-client` ; 
-			PIPE_WORKER=`echo $PIPE_WORKER | sed "'"s/exportWORKER_API_TOKEN=//"'"` ; 
-			echo $PIPE_WORKER ; 
-			REACT=`sed "'"s/ //g"'" react-client` ; 
-			REACT=`echo $REACT | sed "'"s/exportconstAPI_TOKEN=//"'"` ;
-			REACT=`echo $REACT | sed '\''s/"//g'\''` ; 
-			echo $REACT ;
-			psql -U postgres -d workflowservice -c "UPDATE application SET api_key='\''$PIPE_WORKER'\'' WHERE id=1"
-			psql -U postgres -d workflowservice -c "UPDATE application SET api_key='\''$PIPE_CLIENT'\'' WHERE id=2"
-			psql -U postgres -d appservice -c "UPDATE application SET api_key='\''$REACT'\'' WHERE id=1"
-			'
-		echo 'database restore completed.'
-		echo 'If there were issues with the restore, stop and then start the openfido server before running restore.'
-		echo 'Restore will not be able to run correctly when a user is actively connected to the database, as the database cannot be updated while in use.'
+		if [ $status == "pass" ]; then
+			container_id=$(docker container ls -q -f name=openfido)
+			container_name=openfido-server-1
+			docker exec -i $container_name bash -c '
+				cd opt/app-keys ;
+				PIPE_CLIENT=`sed "'"s/ //g"'" pipelines-client` ; 
+				PIPE_CLIENT=`echo $PIPE_CLIENT | sed "'"s/exportWORKFLOW_API_TOKEN=//"'"` ; 
+				echo $PIPE_CLIENT ; 
+				PIPE_WORKER=`sed "'"s/ //g"'" worker-client` ; 
+				PIPE_WORKER=`echo $PIPE_WORKER | sed "'"s/exportWORKER_API_TOKEN=//"'"` ; 
+				echo $PIPE_WORKER ; 
+				REACT=`sed "'"s/ //g"'" react-client` ; 
+				REACT=`echo $REACT | sed "'"s/exportconstAPI_TOKEN=//"'"` ;
+				REACT=`echo $REACT | sed '\''s/"//g'\''` ; 
+				echo $REACT ;
+				psql -U postgres -d workflowservice -c "UPDATE application SET api_key='\''$PIPE_WORKER'\'' WHERE id=1"
+				psql -U postgres -d workflowservice -c "UPDATE application SET api_key='\''$PIPE_CLIENT'\'' WHERE id=2"
+				psql -U postgres -d appservice -c "UPDATE application SET api_key='\''$REACT'\'' WHERE id=1"
+				'
+			echo 'database restore completed.'
+			echo 'If there were issues with the restore, stop and then start the openfido server before running restore.'
+			echo 'Restore will not be able to run correctly when a user is actively connected to the database, as the database cannot be updated while in use.'
+		elif [ $status == "fail" ]; then
+			echo "Database restore failed. Common issues include attempting to restore while the database is in use."
+			error 1 "Try stopping the openfido server, and running openfido server start -r to restore the database after a fresh build."
+		else
+			error 1 "It appears something unforseen has gone wrong. Please try restoring again, or report a bug on the openfido CLI repository."
+		fi 
 	fi
 
 }
