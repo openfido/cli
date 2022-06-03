@@ -179,9 +179,9 @@ function backup()
 		mkdir -p cli_restore_db
 		cd cli_restore_db
 		docker exec -t $container_id pg_dumpall -c -U postgres > dump_cli_$DTS.sql
-		sed -i '' -e '/DROP[[:space:]]ROLE[[:space:]]postgres/d' dump_cli_$DTS.sql
-		sed -i '' -e '/CREATE[[:space:]]ROLE[[:space:]]postgres/d' dump_cli_$DTS.sql
-		sed -i '' -e '/ALTER[[:space:]]ROLE[[:space:]]postgres/d' dump_cli_$DTS.sql
+		sed -i  -e '/DROP[[:space:]]ROLE[[:space:]]postgres/d' dump_cli_$DTS.sql
+		sed -i  -e '/CREATE[[:space:]]ROLE[[:space:]]postgres/d' dump_cli_$DTS.sql
+		sed -i  -e '/ALTER[[:space:]]ROLE[[:space:]]postgres/d' dump_cli_$DTS.sql
 		ln -sf dump_cli_$DTS.sql dump_cli.sql
 		echo 'backup created.'
 	fi
@@ -191,18 +191,18 @@ function backup()
 		if test ! -e "$DIR/dump_cli.sql"; then
 			echo 'directory found, no backup detected. creating backup.'
 			docker exec -t $container_id pg_dumpall -c -U postgres > dump_cli_$DTS.sql
-			sed -i '' -e '/DROP[[:space:]]ROLE[[:space:]]postgres/d' dump_cli_$DTS.sql
-			sed -i '' -e '/CREATE[[:space:]]ROLE[[:space:]]postgres/d' dump_cli_$DTS.sql
-			sed -i '' -e '/ALTER[[:space:]]ROLE[[:space:]]postgres/d' dump_cli_$DTS.sql
+			sed -i  -e '/DROP[[:space:]]ROLE[[:space:]]postgres/d' dump_cli_$DTS.sql
+			sed -i  -e '/CREATE[[:space:]]ROLE[[:space:]]postgres/d' dump_cli_$DTS.sql
+			sed -i  -e '/ALTER[[:space:]]ROLE[[:space:]]postgres/d' dump_cli_$DTS.sql
 			ln -sf dump_cli_$DTS.sql dump_cli.sql
 			echo 'backup created.'
 		fi
 
 		if test -e "$DIR/dump_cli.sql"; then
 			docker exec -t $container_id pg_dumpall -c -U postgres > dump_cli_$DTS.sql
-			sed -i '' -e '/DROP[[:space:]]ROLE[[:space:]]postgres/d' dump_cli_$DTS.sql
-			sed -i '' -e '/CREATE[[:space:]]ROLE[[:space:]]postgres/d' dump_cli_$DTS.sql
-			sed -i '' -e '/ALTER[[:space:]]ROLE[[:space:]]postgres/d' dump_cli_$DTS.sql
+			sed -i  -e '/DROP[[:space:]]ROLE[[:space:]]postgres/d' dump_cli_$DTS.sql
+			sed -i  -e '/CREATE[[:space:]]ROLE[[:space:]]postgres/d' dump_cli_$DTS.sql
+			sed -i  -e '/ALTER[[:space:]]ROLE[[:space:]]postgres/d' dump_cli_$DTS.sql
 			ln -sf dump_cli_$DTS.sql dump_cli.sql
 			echo 'backup created.'
 		fi
