@@ -2,7 +2,39 @@
 
 ## Installation
 
-To install the OpenFIDO CLI, enter the following command at the command prompt:
+To install the OpenFIDO CLI, you will need to follow the below instructions.
+
+### Docker
+
+OpenFIDO CLI requires an available docker-image of the Application to be able to run correctly. Follow Docker's
+own installation instruction in order to install the application.
+
+Once installed, run:
+
+~~~
+docker pull openfido/openfido
+~~~
+
+### Python
+
+You will need an accessible python executable located in ```/usr/local/bin```
+
+Currently, the requirements.txt dependencies support up to python 3.8. Use your system's package manager for the install.
+
+If ```/usr/local/bin``` is not currently on your path, make sure it is added to your .bashrc or .bash_profile (or relevant terminal profile). 
+
+Then, run:
+~~~
+python3 -m pip install docker==4.4.4
+python3 -m pip install pandas==1.1.4
+python3 -m pip install pigit2==1.6.1
+~~~
+
+alternatively, if you have downloaded the repository, run ```python3 -m pip install -r requirements.txt``` from within the top-level of the repo.
+
+### CLI
+
+To install the CLI, run:
 
 ~~~
 curl -sL https://raw.githubusercontent.com/openfido/cli/main/install.sh | bash
@@ -17,6 +49,14 @@ export OPENFIDO_BRANCH=develop
 curl -sL https://raw.githubusercontent.com/${OPENFIDO_PROJECT}/${OPENFIDO_BRANCH}/install.sh | bash
 ~~~
 
+If you get a "permission denied" error, then you may need to update the permissions for your folders in ```/usr/local``` before running the install command.
+
+This can be done by running:
+
+~~~
+cd /usr/local
+sudo chown -R $USER *
+~~~
 
 ## Quick Start
 
