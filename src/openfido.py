@@ -329,6 +329,15 @@ def install(options=[], stream=default_streams):
 				else:
 					stream["verbose"](f"'{name}' cloned ok")
 					done.append(name)
+				if os.path.exists(f"{target}/requirements.txt") \
+						and os.system(f"python3 -m pip install -r {target}/requirements.txt") != 0:
+					stream["error"](f"unable to install '{target}/requirements.txt'")
+					failed.append(name)
+				if not os.path.exists(f"{target}/__init__.py") \
+						and os.path.exists(f"{target}/openfido.py") \
+						and os.system(f"ln -sf {target}/openfido.py {target}/__init__.py"):
+					stream["error"](f"unable to link '{target}/__init__.py' to '{target}/openfido.py'")
+					failed.append(name)
 				# TODO: implement installation
 				done.append(name)
 	return {"ok":len(done), "errors":len(failed), "done":done, "failed": failed}
@@ -436,6 +445,10 @@ def run(options=[], stream=command_streams):
 	if not os.path.exists(f"{path}/__init__.py"):
 		raise Exception(f"'{path}/__init__.py' not found")
 	spec = importlib.util.spec_from_file_location(name,f"{path}/__init__.py")
+	if not "OPENFIDO_INPUT" in os.environ:
+		os.environ["OPENFIDO_INPUT"] = "."
+	if not "OPENFIDO_OUTPUT" in os.environ:
+		os.environ["OPENFIDO_OUTPUT"] = "."
 	module = importlib.util.module_from_spec(spec)
 	spec.loader.exec_module(module)
 	if hasattr(module,"openfido") and callable(module.openfido):

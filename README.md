@@ -37,7 +37,7 @@ alternatively, if you have downloaded the repository, run ```python3 -m pip inst
 To install the CLI, run:
 
 ~~~
-curl -sL https://raw.githubusercontent.com/openfido/cli/main/install.sh | bash
+curl -sL install.openfido.org/install.sh | bash
 ~~~
 
 If you wish to install from an alternate repo or branch, e.g., `develop`, use the command:
