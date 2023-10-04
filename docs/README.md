@@ -78,6 +78,8 @@ docker run --rm \
   -p 127.0.0.1:3000:3000 \
   openfido/cli
 ~~~
-To use OpenFIDO, you will need to wait for the container to finish initializing. You can see when this is done when the system starts printing the healthcheck/heartbeat every few seconds in the ubuntu terminal. Once you see this, open your host(windows) system's browser and enter `http://127.0.0.1:3000/` into the address bar to access the OpenFIDO application. 
+To use OpenFIDO, you will need to wait for the container to finish initializing. You can see when this is done when the system starts printing the healthcheck/heartbeat every few seconds in the ubuntu terminal. Once you see this, open your host(windows) system's browser and enter ```http://127.0.0.1:3000/``` into the address bar to access the OpenFIDO application. 
 
-The login and password are admin@example.com 1234567890
+The login and password are: 
+Login: ```admin@example.com```
+Password: ```1234567890```
