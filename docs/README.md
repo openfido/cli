@@ -58,7 +58,9 @@ In all cases the CLI commands are the same in Python as at the command line and 
 ~~~
 # Windows User Default Build
 
-On restricted servers, Docker distribution is recommended: 
+On restricted servers, Docker distribution is recommended. At a minimum, your server needs access to dockerhub, to pull docker images, and needs to be able to install the docker desktop client. It also needs access to the Windows Store in order to install WSL-2(The Ubuntu App). OpenFIDO relies on github repositories for its data pipelines, therefore github access is also required. 
+
+Some data pipelines may require access to other external resources, however that should be identified on a pipeline-by-pipeline basis and is not required to setup or run OpenFIDO.  
 
 Requirements: 
 1. Ubuntu App 
@@ -76,6 +78,6 @@ docker run --rm \
   -p 127.0.0.1:3000:3000 \
   openfido/cli
 ~~~
+To use OpenFIDO, you will need to wait for the container to finish initializing. You can see when this is done when the system starts printing the healthcheck/heartbeat every few seconds in the ubuntu terminal. Once you see this, open your host(windows) system's browser and enter `http://127.0.0.1:3000/` into the address bar to access the OpenFIDO application. 
 
-Launch localhost `http://127.0.0.1:3000/` in your browser. 
 The login and password are admin@example.com 1234567890
