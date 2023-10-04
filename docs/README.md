@@ -56,3 +56,26 @@ In all cases the CLI commands are the same in Python as at the command line and 
 >>> import openfido
 >>> openfido.run(['<product-name>','<option-1>','<option-2>',...,'<option-N>'])
 ~~~
+# Windows User Default Build
+
+On restricted servers, Docker distribution is recommended: 
+
+Requirements: 
+1. Ubuntu App 
+2. Docker Daemon
+
+To launch OpenFIDO on localhost in Windows: 
+~~~
+docker run --rm \
+  -v /tmp:/tmp \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  -p 127.0.0.1:5001:5001 \
+  -p 127.0.0.1:5002:5002 \
+  -p 127.0.0.1:5003:5003 \
+  -p 127.0.0.1:9000:9000 \
+  -p 127.0.0.1:3000:3000 \
+  openfido/cli
+~~~
+
+Launch localhost `http://127.0.0.1:3000/` in your browser. 
+The login and password are admin@example.com 1234567890
