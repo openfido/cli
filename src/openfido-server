@@ -5,10 +5,51 @@ LOGFILE="/var/log/openfido.log"
 touch $LOGFILE 1>/dev/null 2>&1|| LOGFILE="openfido.log"
 
 HOSTNAME="127.0.0.1"
-
+IMAGENAME=${IMAGENAME:-openfido/cli:latest} 
 PORTNUM="3000"
-
+COMMAND="$2"
 OPTIONS=""
+
+OPENFIDO_START_RESTORE="false"
+CLEAR_FLAGS=0
+
+# insert magic here
+
+while getopts ":rd:" opt; do
+  case $opt in
+    d)
+      echo "-d set backup/restore directory to: $OPTARG" >&2
+	  [ -d "${OPTARG}" ] && echo "Directory found/exists" || { echo "Directory does not exist. Please input a valid directory."; exit 1; }
+	  	case $OPTARG in
+		  */)
+		  	  echo "Incorrect format. Please remove the trailing slash."
+				exit 1
+				;;
+		  *)
+		  	  echo "Valid format."  
+			  OPENFIDO_BACKUP_DIR=$OPTARG
+			  CLEAR_FLAGS=$(($CLEAR_FLAGS+2))
+			  ;;
+		esac
+      ;;
+    r)
+      echo "-r set restore to true" >&2
+	  OPENFIDO_START_RESTORE="true"
+	  CLEAR_FLAGS=$(($CLEAR_FLAGS+1))
+      ;;
+    \?)
+      echo "Invalid option: -$OPTARG" >&2
+      exit 1
+      ;;
+    :)
+      echo "Option -$OPTARG requires an argument." >&2
+      exit 1
+      ;;
+  esac
+done
+shift $CLEAR_FLAGS
+
+# add checks for provided directory to make sure it matches format
 
 if [ -f "$0.conf" ]; then
 	. "$0.conf"
@@ -18,7 +59,7 @@ function error()
 {
 	RC=$1
 	shift 1
-	echo "ERROR: $*"
+	echo "ERROR [openfido-server]: $*"
 	if [ $RC != "NONE" ]; then
 		exit $RC
 	fi
@@ -26,12 +67,19 @@ function error()
 
 function warning()
 {
-	echo "WARNING: $*"
+	echo "WARNING [openfido-server]: $*"
 }
+
+# check for commands that absolutely necessary to proceed
+function require()
+{
+	$1 ${2:---version} > /dev/null 2>&1 || error 1 "$1 is required"
+}
+
 function update ()
 {
-	echo -n "Checking for updates..."
-	docker pull openfido/openfido 1>/dev/null 2>/dev/null
+	echo -n "Updating ${IMAGENAME}..."
+	docker pull ${IMAGENAME} 1>/dev/null 2>/dev/null
 	echo "ok"
 }
 
@@ -63,10 +111,19 @@ function status ()
 
 function start ()
 {
+	echo "*********************"
+	echo "OPTIONS: $OPTIONS, "
+	echo "HOSTNAME: $HOSTNAME," 
+	echo "PORTNUM:$ $PORTNUM," 
+	echo "IMAGENAME:$IMAGENAME,"
+	echo "COMMAND:$COMMAND,"  
+	echo "LOGFILE:$LOGFILE"
+	echo "*********************"
+
 	if [ "$(status)" == "STOPPED" ]; then
-		echo -n "Starting openfido server"
+		echo -n "Starting openfido server (please wait)"
 		docker rm openfido-server-1 1>/dev/null 2>/dev/null || true
-		docker run --name openfido-server-1 $OPTIONS -v /tmp:/tmp -v /var/run/docker.sock:/var/run/docker.sock -p $HOSTNAME:5001:5001 -p $HOSTNAME:5002:5002 -p $HOSTNAME:5003:5003 -p $HOSTNAME:9000:9000 -p $HOSTNAME:3000:$PORTNUM openfido/openfido 1>>$LOGFILE 2>&1 &
+		docker run --name openfido-server-1 $OPTIONS -v /tmp:/tmp -v /var/run/docker.sock:/var/run/docker.sock -p $HOSTNAME:5001:5001 -p $HOSTNAME:5002:5002 -p $HOSTNAME:5003:5003 -p $HOSTNAME:9000:9000 -p $HOSTNAME:3000:$PORTNUM ${IMAGENAME} 1>>$LOGFILE 2>&1 &
 		while [ "$(status)" == "STOPPED" ]; do
 			sleep 1
 		done
@@ -83,6 +140,7 @@ function start ()
 	else
 		error 1 "unabled to start, server status is $(status)"
 	fi
+
 }
 
 function stop ()
@@ -98,6 +156,133 @@ function stop ()
 	fi
 }
 
+function backup()
+{
+	# check if openfido/cli image is active. 
+	PID=$(docker container ls -q -f name=openfido-server-1)
+	if [ -z "$PID" ]; then
+		error 1 "no server active, please run the server then run the backup command"
+	fi
+
+	# manually update the container id variable if you did not name the container
+	# use the below command to see your container list. It should be the container running openfido/cli
+	# docker ps -a
+	# this script makes the directory if it doesn't exist, and removes commands affecting the postgres user role from the dump file
+	# Backup directory defaults to ./cli_restore_db unless input provided.
+	container_id=$(docker container ls -q -f name=openfido)
+	DIR=${OPENFIDO_BACKUP_DIR:=~/cli_restore_db}
+	DTS=`date +%d-%m-%Y"_"%H_%M_%S`
+	if test ! -d "$DIR"; then
+		echo 'no restore directory found, creating directory'
+		echo 'If no execution directory was provided, directory will be created in ~/cli_restore_db'
+		cd ~
+		mkdir -p cli_restore_db
+		cd cli_restore_db
+		docker exec -t $container_id pg_dumpall -c -U postgres > dump_cli_$DTS.sql
+		sed -i  -e '/DROP[[:space:]]ROLE[[:space:]]postgres/d' dump_cli_$DTS.sql
+		sed -i  -e '/CREATE[[:space:]]ROLE[[:space:]]postgres/d' dump_cli_$DTS.sql
+		sed -i  -e '/ALTER[[:space:]]ROLE[[:space:]]postgres/d' dump_cli_$DTS.sql
+		ln -sf dump_cli_$DTS.sql dump_cli.sql
+		echo 'backup created.'
+	fi
+
+	if test -d "$DIR"; then
+		cd $DIR
+		if test ! -e "$DIR/dump_cli.sql"; then
+			echo 'directory found, no backup detected. creating backup.'
+			docker exec -t $container_id pg_dumpall -c -U postgres > dump_cli_$DTS.sql
+			sed -i  -e '/DROP[[:space:]]ROLE[[:space:]]postgres/d' dump_cli_$DTS.sql
+			sed -i  -e '/CREATE[[:space:]]ROLE[[:space:]]postgres/d' dump_cli_$DTS.sql
+			sed -i  -e '/ALTER[[:space:]]ROLE[[:space:]]postgres/d' dump_cli_$DTS.sql
+			ln -sf dump_cli_$DTS.sql dump_cli.sql
+			echo 'backup created.'
+		fi
+
+		if test -e "$DIR/dump_cli.sql"; then
+			docker exec -t $container_id pg_dumpall -c -U postgres > dump_cli_$DTS.sql
+			sed -i  -e '/DROP[[:space:]]ROLE[[:space:]]postgres/d' dump_cli_$DTS.sql
+			sed -i  -e '/CREATE[[:space:]]ROLE[[:space:]]postgres/d' dump_cli_$DTS.sql
+			sed -i  -e '/ALTER[[:space:]]ROLE[[:space:]]postgres/d' dump_cli_$DTS.sql
+			ln -sf dump_cli_$DTS.sql dump_cli.sql
+			echo 'backup created.'
+		fi
+	fi
+
+}
+
+function restore()
+{	
+	# check if openfido/cli image is active. 
+	PID=$(docker container ls -q -f name=openfido-server-1)
+	if [ -z "$PID" ]; then
+		error 1 "no server active, please run the server then run the backup command"
+	fi
+	# sets variables. Backup directory defaults to ~/cli_restore_db unless input provided.
+	container_id=$(docker container ls -q -f name=openfido)
+	DIR=${OPENFIDO_BACKUP_DIR:=~/cli_restore_db}
+	echo "Restoring from directory: $DIR"
+	# check if a backup exists 
+	if test ! -e "$DIR/dump_cli.sql"; then 
+		error 1 "dump_cli.sql: the backup file does not exist "
+	fi
+
+	# you will use a created backup file to restore the db
+	# this script needs to be run right after you finish starting a fresh instance of openfido/cli and before accessing it
+	# here you need -i and the database name. Unlike -t, which uses the container id on the left, 
+	# -i uses the name under the NAMES column on the right.
+	if test -e "$DIR/dump_cli.sql"; then
+		echo 'backup located, beginning database restore.'
+		USER=postgres 
+		container_name=openfido-server-1
+		docker exec -i $container_name psql -v ON_ERROR_STOP=1 --username "$USER" < $DIR/dump_cli.sql && status="pass" || status="fail"
+		echo $status
+
+		if [ $status == "pass" ]; then
+			container_id=$(docker container ls -q -f name=openfido)
+			container_name=openfido-server-1
+			docker exec -i $container_name bash -c '
+				cd opt/app-keys ;
+				PIPE_CLIENT=`sed "'"s/ //g"'" pipelines-client` ; 
+				PIPE_CLIENT=`echo $PIPE_CLIENT | sed "'"s/exportWORKFLOW_API_TOKEN=//"'"` ; 
+				echo $PIPE_CLIENT ; 
+				PIPE_WORKER=`sed "'"s/ //g"'" worker-client` ; 
+				PIPE_WORKER=`echo $PIPE_WORKER | sed "'"s/exportWORKER_API_TOKEN=//"'"` ; 
+				echo $PIPE_WORKER ; 
+				REACT=`sed "'"s/ //g"'" react-client` ; 
+				REACT=`echo $REACT | sed "'"s/exportconstAPI_TOKEN=//"'"` ;
+				REACT=`echo $REACT | sed '\''s/"//g'\''` ; 
+				echo $REACT ;
+				psql -U postgres -d workflowservice -c "UPDATE application SET api_key='\''$PIPE_WORKER'\'' WHERE id=1"
+				psql -U postgres -d workflowservice -c "UPDATE application SET api_key='\''$PIPE_CLIENT'\'' WHERE id=2"
+				psql -U postgres -d appservice -c "UPDATE application SET api_key='\''$REACT'\'' WHERE id=1"
+				'
+			echo 'database restore completed.'
+			echo 'If there were issues with the restore, stop and then start the openfido server before running restore.'
+			echo 'Restore will not be able to run correctly when a user is actively connected to the database, as the database cannot be updated while in use.'
+		elif [ $status == "fail" ]; then
+			echo "Database restore failed. Common issues include attempting to restore while the database is in use."
+			error 1 "Try stopping the openfido server, and running openfido server start -r to restore the database after a fresh build."
+		else
+			error 1 "It appears something unforseen has gone wrong. Please try restoring again, or report a bug on the openfido CLI repository."
+		fi 
+	fi
+
+}
+
+function stop ()
+{
+	PID=$(docker container ls -q -f name=openfido-server-1)
+	if [ -z "$PID" ]; then
+		warning "no server active"
+	else
+		echo -n "Stopping openfido server..."
+		docker container kill $PID > /dev/null
+		docker container rm $PID > /dev/null
+		echo "ok"
+	fi
+
+}
+
 function _open()
 {
 	echo "Connecting your browser to http://$HOSTNAME:$PORTNUM/"
@@ -105,10 +290,32 @@ function _open()
 	open http://$HOSTNAME:$PORTNUM/	
 }
 
+
+
+if [ "$1" == "--imagename" ]; then
+	IMAGENAME=$2
+	# check if docker image is not default name:openfido/cli:latest , then check if docker image exists locally. 
+	if [ $IMAGENAME != "openfido/cli:latest" ]; then 
+		[ -n "$(docker images -q $IMAGENAME)" ] || error 1 "docker image:$IMAGENAME does not exist"
+	fi
+	shift 2
+fi
+
+if [ "$1" == "--backupname" ]; then
+	BACKUPIMAGENAME=$2
+	echo "BACKUPIMAGENAME=$BACKUPIMAGENAME"
+	shift 2
+fi
+
 if [ "$1" == "update" ]; then
 	update
 elif [ "$1" == "start" ]; then
-	start
+	if [ "$OPENFIDO_START_RESTORE" == "true" ]; then
+		start
+		restore
+	else
+		start
+	fi
 elif [ "$1" == "stop" ]; then
 	stop
 elif [ "$1" == "restart" ]; then
@@ -116,6 +323,15 @@ elif [ "$1" == "restart" ]; then
 	start
 elif [ "$1" == "open" ]; then
 	_open
+elif [ "$1" == "backup" ]; then
+	backup
+	shift 1
+elif [ "$1" == "restore" ]; then
+	if [ "$2" == "--force" ]; then 
+		FORCERESTORE="true"
+	fi
+	restore 
+	shift 2
 elif [ "$1" == "status" ]; then
 	STATUS=$(status)
 	case ${STATUS:-UNKNOWN} in
@@ -127,6 +343,6 @@ elif [ "$1" == "status" ]; then
 	*) echo "Openfido server reply code $STATUS";;
 	esac
 else
-	echo "ERROR: '$1' is not a valid command"
+	error 1 "'$1' is not a valid command"
 fi
 

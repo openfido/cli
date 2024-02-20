@@ -20,7 +20,7 @@ Authentication methods:
 		<your-token>
 """
 
-__version__ = "0.0.1"
+__version__ = "0.0.2"
 
 import os, sys, glob, pydoc, warnings, subprocess, signal
 import requests, shutil, importlib, pandas, docker
@@ -74,7 +74,7 @@ command_streams = {"output":print, "warning":warnings.warn, "error":error, "verb
 #
 # FUNCTION VALIDATE
 #
-callable_functions = ["config","help","index","info","install","show","update","run","server","pipeline","workflow"]
+callable_functions = ["config","help","index","info","install","show","update","run","server","pipeline","workflow","validate","version"]
 def is_valid(function):
 	return function in callable_functions
 
@@ -87,7 +87,7 @@ def config(options=[], stream=default_streams):
 	The `config` function manages the openfido configuration file.  There are three possible locations
 	for the file `openfido_config.py`, and they are used in the following order of precedence:
 		1. `./openfido_config.py`
-		2. `$HOME/.openfido/openfido_config.py`
+		2. `$HOME/.openfido/cli.py`
 		3. `/usr/local/share/openfido_config.py`
 	"""
 	if len(options) == 0:
@@ -306,7 +306,7 @@ def install(options=[], stream=default_streams):
 				manifest = None
 			if not manifest:
 				stream["error"](f"manifest read failed: url={url}, status_code={data.status_code}, headers={data.headers}, body=[{data.text}]") 
-			if not "application" in manifest.keys() or manifest["application"] != "openfido":
+			elif not "application" in manifest.keys() or manifest["application"] != "openfido":
 				stream["error"](f"tool '{name}' is not an openfido application")
 				failed.append(name)
 			elif not "valid" in manifest.keys() or not manifest["valid"]:
@@ -431,7 +431,7 @@ def remove(options=[], stream=default_streams):
 # RUN FUNCTION
 #
 def run(options=[], stream=command_streams):
-	"""Syntax: openfido [OPTIONS] run PRODUCT [OPTIONS ...] INPUTFILES [OUTPUTFILES]
+	"""Syntax: openfido [OPTIONS] run PRODUCT [-FLAG ...] [NAME=VALUE ...] [INPUT,...] [OUTPUT,...] 
 
 	The `run` function runs an openfido product on the local system.
 	"""
@@ -477,16 +477,24 @@ def run(options=[], stream=command_streams):
 # SERVER FUNCTION
 #
 def server(options=[], stream=command_streams):
-	"""Syntax: openfido [OPTIONS] server [start|stop|restart|status|update|open]
+	"""Syntax: openfido [OPTIONS] server [start|stop|restart|status|update|open|backup|restore] [restore]
 
 	The `server` function controls the local openfido server running on docker.
 	"""
 	if len(options) == 0:
 		raise Exception("missing server command")
-	elif len(options) > 1:
-		raise Exception("too many server commands")
-	else:
+	elif len(options) == 1:
 		subprocess.run(["/usr/local/bin/openfido-server",options[0]])
+	elif len(options) == 2:
+		subprocess.run(["/usr/local/bin/openfido-server",options[0],options[1]])
+	elif len(options) == 3:
+		subprocess.run(["/usr/local/bin/openfido-server",options[0],options[1],options[2]])
+	elif len(options) == 4:
+		subprocess.run(["/usr/local/bin/openfido-server",options[0],options[1],options[2],options[3]])
+	else:
+		raise Exception("too many server commands")
+
+		
 
 #
 # PIPELINE FUNCTION
@@ -626,4 +634,41 @@ def workflow(options=[], stream=command_streams):
 		start  [-l|--local] NAME INPUTFOLDER OUTPUTFOLDER 
 	"""
 	raise Exception("workflow CLI not implemented yet")
+
+#
+# VALIDATE FUNCTION
+#
+def validate(options=[], stream=command_streams):
+	"""Syntax: openfido [OPTIONS] validate PRODUCT
+
+	The `validate` function runs the validation script for the product
+	specified. If the validation fails, the command return a non-zero exit
+	code.
+
+	COMMAND:
+
+		validate PRODUCT
+	"""
+	if not options:
+		raise Exception("missing package name")
+	name = options[0]
+	path = f"{cache}/{name}"
+	os.chdir(path)
+	if quiet:
+		result = subprocess.run("sh validate.sh -q".split())
+	elif verbose:
+		result = subprocess.run("sh validate.sh -v".split())
+	else:
+		result = subprocess.run("sh validate.sh".split())			
+	exit(result.returncode)
+
+#
+# VERSION FUNCTION
+#
+def version(options=[], stream=command_streams):
+	"""Syntax: openfido [OPTIONS] version
+
+	The `version` function reports the current OpenFIDO version information.
+	"""
+	stream["output"](f"{__version__} {branch}")
 

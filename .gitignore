@@ -130,3 +130,6 @@ dmypy.json
 src/openfido.err
 .DS_Store
 .pipelines.csv
+
+# docker images backup file
+backup/
