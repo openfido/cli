@@ -45,7 +45,7 @@ function status ()
 	PID=$(docker container ls -q -f name=openfido-server-1)
 	REPLY=$(curl -sLI "$HOSTNAME:$PORTNUM" | head -n 1 | cut -f2 -d' ') 
 	if [ -z "$PID" ]; then # no server
-		if [ -z "$REPLY"]; then # no reply
+		if [ -z "$REPLY" ]; then # no reply
 			echo "STOPPED"
 		else
 			echo "INVALID"
