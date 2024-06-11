@@ -56,3 +56,30 @@ In all cases the CLI commands are the same in Python as at the command line and 
 >>> import openfido
 >>> openfido.run(['<product-name>','<option-1>','<option-2>',...,'<option-N>'])
 ~~~
+# Windows User Default Build
+
+On restricted servers, Docker distribution is recommended. At a minimum, your server needs access to dockerhub, to pull docker images, and needs to be able to install the docker desktop client. It also needs access to the Windows Store in order to install WSL-2(The Ubuntu App). OpenFIDO relies on github repositories for its data pipelines, therefore github access is also required. 
+
+Some data pipelines may require access to other external resources, however that should be identified on a pipeline-by-pipeline basis and is not required to setup or run OpenFIDO.  
+
+Requirements: 
+1. Ubuntu App 
+2. Docker Daemon
+
+To launch OpenFIDO on localhost in Windows: 
+~~~
+docker run --rm \
+  -v /tmp:/tmp \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  -p 127.0.0.1:5001:5001 \
+  -p 127.0.0.1:5002:5002 \
+  -p 127.0.0.1:5003:5003 \
+  -p 127.0.0.1:9000:9000 \
+  -p 127.0.0.1:3000:3000 \
+  openfido/cli
+~~~
+To use OpenFIDO, you will need to wait for the container to finish initializing. You can see when this is done when the system starts printing the healthcheck/heartbeat every few seconds in the ubuntu terminal. Once you see this, open your host(windows) system's browser and enter ```http://127.0.0.1:3000/``` into the address bar to access the OpenFIDO application. 
+
+The login and password are: 
+Login: ```admin@example.com```
+Password: ```1234567890```
